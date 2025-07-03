@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MobileHeader } from '@/components/MobileHeader';
 import { BottomNav } from '@/components/BottomNav';
+import { ClockOutModal } from '@/components/ClockOutModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { isWorkingHours, isLateArrival, getAttendanceMessage } from '@/utils/workHours';
 import { 
   Building2, 
   Car, 
@@ -38,9 +40,11 @@ export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
   const [showWorkTypeSelector, setShowWorkTypeSelector] = useState(false);
+  const [showClockOutModal, setShowClockOutModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Update time every second
@@ -79,23 +83,28 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const today = format(new Date(), 'yyyy-MM-dd');
-      const now = new Date().toISOString();
+      const now = new Date();
+      const nowISO = now.toISOString();
 
       const { error } = await supabase
         .from('attendance_records')
         .insert({
           user_id: user?.id,
           date: today,
-          clock_in_time: now,
+          clock_in_time: nowISO,
           work_type: workType,
           status: 'active'
         });
 
       if (error) throw error;
 
+      const message = getAttendanceMessage(now, true);
+      const isLate = isLateArrival(now);
+
       toast({
         title: "Absen Masuk Berhasil",
-        description: `Anda telah absen masuk dengan tipe ${workType}`,
+        description: message,
+        variant: isLate ? "destructive" : "default",
       });
 
       setShowWorkTypeSelector(false);
@@ -103,6 +112,43 @@ export default function Dashboard() {
     } catch (error: any) {
       toast({
         title: "Gagal Absen Masuk",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClockOut = async (report: string) => {
+    setLoading(true);
+    try {
+      const now = new Date();
+      const nowISO = now.toISOString();
+
+      const { error } = await supabase
+        .from('attendance_records')
+        .update({
+          clock_out_time: nowISO,
+          daily_report: report,
+          status: 'completed'
+        })
+        .eq('id', todayRecord?.id);
+
+      if (error) throw error;
+
+      const message = getAttendanceMessage(now, false);
+
+      toast({
+        title: "Absen Pulang Berhasil",
+        description: message,
+      });
+
+      setShowClockOutModal(false);
+      fetchTodayAttendance();
+    } catch (error: any) {
+      toast({
+        title: "Gagal Absen Pulang",
         description: error.message,
         variant: "destructive",
       });
@@ -201,6 +247,7 @@ export default function Dashboard() {
           )}
 
           <Button
+            onClick={() => setShowClockOutModal(true)}
             disabled={!todayRecord?.clock_in_time || !!todayRecord?.clock_out_time}
             className="h-20 bg-warning hover:bg-warning/90 text-warning-foreground font-semibold text-lg disabled:opacity-50"
           >
@@ -266,7 +313,7 @@ export default function Dashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-foreground">Rekap Presensi</h3>
-              <Button variant="link" className="text-primary p-0 h-auto">
+              <Button variant="link" className="text-primary p-0 h-auto" onClick={() => navigate('/attendance-history')}>
                 Lihat Semua
               </Button>
             </div>
@@ -293,6 +340,14 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Clock Out Modal */}
+        <ClockOutModal
+          isOpen={showClockOutModal}
+          onClose={() => setShowClockOutModal(false)}
+          onSubmit={handleClockOut}
+          loading={loading}
+        />
       </div>
 
       <BottomNav />
