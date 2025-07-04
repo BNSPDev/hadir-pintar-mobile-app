@@ -227,8 +227,8 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     try {
       setDownloading(true);
 
-      // Get detailed attendance records for all users with better error handling
-      const { data: attendanceRecords, error } = await supabase
+      // Get attendance records first
+      const { data: attendanceRecords, error: attendanceError } = await supabase
         .from("attendance_records")
         .select(
           `
@@ -239,21 +239,36 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
           work_type,
           status,
           daily_report,
-          user_id,
-          profiles!inner(
-            full_name,
-            position,
-            department,
-            employee_id
-          )
+          user_id
         `,
         )
         .order("date", { ascending: false });
 
-      if (error) {
-        console.error("Supabase error:", error);
-        throw new Error(`Database error: ${error.message}`);
+      if (attendanceError) {
+        console.error("Supabase error:", attendanceError);
+        throw new Error(`Database error: ${attendanceError.message}`);
       }
+
+      // Get all profiles separately
+      const { data: profiles, error: profilesError } = await supabase.from(
+        "profiles",
+      ).select(`
+          user_id,
+          full_name,
+          position,
+          department,
+          employee_id
+        `);
+
+      if (profilesError) {
+        console.error("Profiles error:", profilesError);
+        throw new Error(`Database error: ${profilesError.message}`);
+      }
+
+      // Create a map of profiles for quick lookup
+      const profilesMap = new Map(
+        profiles?.map((profile) => [profile.user_id, profile]) || [],
+      );
 
       if (!attendanceRecords || attendanceRecords.length === 0) {
         toast({
@@ -288,12 +303,15 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
           ? new Date(record.clock_out_time)
           : null;
 
+        // Get profile data from map
+        const profile = profilesMap.get(record.user_id);
+
         return [
           recordDate ? format(recordDate, "dd/MM/yyyy") : "-",
-          record.profiles?.full_name || "-",
-          record.profiles?.employee_id || "-",
-          record.profiles?.position || "-",
-          record.profiles?.department || "-",
+          profile?.full_name || "Profil Tidak Ditemukan",
+          profile?.employee_id || "-",
+          profile?.position || "-",
+          profile?.department || "-",
           clockInTime ? format(clockInTime, "HH:mm") : "-",
           clockOutTime ? format(clockOutTime, "HH:mm") : "-",
           record.work_type || "-",
