@@ -1,4 +1,4 @@
-import { Clock } from 'lucide-react';
+import { Clock } from "lucide-react";
 
 interface MobileHeaderProps {
   title: string;
@@ -7,22 +7,28 @@ interface MobileHeaderProps {
 
 export function MobileHeader({ title, showTime = true }: MobileHeaderProps) {
   const now = new Date();
-  const timeString = now.toLocaleTimeString('id-ID', { 
-    hour: '2-digit', 
-    minute: '2-digit' 
+  const timeString = now.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 
   return (
     <div className="bg-primary text-primary-foreground p-4 rounded-b-3xl shadow-card">
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-            <div className="w-4 h-4 bg-white rounded-sm"></div>
+        <div className="flex items-center gap-3">
+          <img
+            src="/logo-bnsp.png"
+            alt="BNSP Logo"
+            className="w-10 h-10 object-contain bg-white rounded-lg p-1"
+          />
+          <div>
+            <span className="text-xs font-medium opacity-90 block">
+              BADAN NASIONAL SERTIFIKASI PROFESI
+            </span>
+            <span className="text-xs font-bold opacity-100 block">
+              E-PRESENSI ANGGOTA BNSP
+            </span>
           </div>
-          <span className="text-xs font-medium opacity-90">
-            KEMENTERIAN KETENAGAKERJAAN<br />
-            REPUBLIK INDONESIA
-          </span>
         </div>
         {showTime && (
           <div className="flex items-center gap-1 text-right">

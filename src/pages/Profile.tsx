@@ -1,25 +1,29 @@
-import { Navigate } from 'react-router-dom';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { MobileHeader } from '@/components/MobileHeader';
-import { BottomNav } from '@/components/BottomNav';
-import { useAuth } from '@/hooks/useAuth';
-import { useProfile } from '@/hooks/useProfile';
-import { useToast } from '@/hooks/use-toast';
-import { 
+import { Navigate } from "react-router-dom";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { MobileHeader } from "@/components/MobileHeader";
+import { BottomNav } from "@/components/BottomNav";
+import { EditProfileModal } from "@/components/EditProfileModal";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import {
   User,
   Info,
   FileText,
   Shield,
   LogOut,
-  ChevronRight
-} from 'lucide-react';
+  ChevronRight,
+  Edit,
+} from "lucide-react";
 
 export default function Profile() {
   const { user, signOut, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading } = useProfile();
+  const { profile, loading: profileLoading, fetchProfile } = useProfile();
   const { toast } = useToast();
+  const [showEditModal, setShowEditModal] = useState(false);
 
   if (authLoading || profileLoading) {
     return (
@@ -53,16 +57,16 @@ export default function Profile() {
   };
 
   const menuItems = [
-    { icon: User, label: 'Profil', action: () => {} },
-    { icon: Info, label: 'Tentang Aplikasi', action: () => {} },
-    { icon: FileText, label: 'Ketentuan Layanan', action: () => {} },
-    { icon: Shield, label: 'Kebijakan Privasi', action: () => {} },
+    { icon: User, label: "Edit Profil", action: () => setShowEditModal(true) },
+    { icon: Info, label: "Tentang Aplikasi", action: () => {} },
+    { icon: FileText, label: "Ketentuan Layanan", action: () => {} },
+    { icon: Shield, label: "Kebijakan Privasi", action: () => {} },
   ];
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <MobileHeader title="Akun" />
-      
+
       <div className="p-4 space-y-6">
         {/* User Profile Card */}
         <Card className="shadow-card border-0">
@@ -70,28 +74,38 @@ export default function Profile() {
             <div className="flex items-center gap-4 mb-6">
               <Avatar className="w-20 h-20">
                 <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
-                  {profile?.full_name?.charAt(0) || 'U'}
+                  {profile?.full_name?.charAt(0) || "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <h2 className="font-bold text-xl text-foreground">
-                  {profile?.full_name || 'Loading...'}
+                  {profile?.full_name || "Loading..."}
                 </h2>
                 <p className="text-sm font-medium text-primary mb-1">
-                  {profile?.position || 'STAFF'}
+                  {profile?.position || "STAFF"}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {profile?.department || 'Department'}
+                  {profile?.department || "Department"}
                 </p>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowEditModal(true)}
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
             </div>
           </CardContent>
         </Card>
 
         {/* Info Section */}
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-muted-foreground px-1">Info Lainnya</h3>
-          
+          <h3 className="text-sm font-semibold text-muted-foreground px-1">
+            Info Lainnya
+          </h3>
+
           <Card className="shadow-card border-0">
             <CardContent className="p-0">
               {menuItems.map((item, index) => {
@@ -101,11 +115,15 @@ export default function Profile() {
                     key={item.label}
                     onClick={item.action}
                     className={`w-full flex items-center gap-4 p-4 text-left hover:bg-muted/30 transition-colors ${
-                      index !== menuItems.length - 1 ? 'border-b border-border' : ''
+                      index !== menuItems.length - 1
+                        ? "border-b border-border"
+                        : ""
                     }`}
                   >
                     <Icon className="w-5 h-5 text-primary" />
-                    <span className="flex-1 font-medium text-foreground">{item.label}</span>
+                    <span className="flex-1 font-medium text-foreground">
+                      {item.label}
+                    </span>
                     <ChevronRight className="w-5 h-5 text-muted-foreground" />
                   </button>
                 );
@@ -130,9 +148,19 @@ export default function Profile() {
 
         {/* App Version */}
         <div className="text-center">
-          <p className="text-sm text-muted-foreground">e-Presensi Kemnaker v2.1.4</p>
+          <p className="text-sm text-muted-foreground">
+            E-Presensi Anggota BNSP v2.1.4
+          </p>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        profile={profile}
+        onProfileUpdate={fetchProfile}
+      />
 
       <BottomNav />
     </div>
