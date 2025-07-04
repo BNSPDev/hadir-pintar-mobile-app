@@ -63,15 +63,16 @@ export function useProfile() {
 
       if (error && error.code !== "PGRST116") {
         console.error("Profile fetch error:", error);
-        // Don't throw, just set empty profile and continue
+        // Set fallback profile on error
         setProfile({
           id: "error",
           user_id: user.id,
-          full_name: "Profile Error",
+          full_name: "Error Loading Profile",
           position: "Staff",
           department: "Umum",
           employee_id: "N/A",
         });
+        setLoading(false);
         return;
       }
 
@@ -80,11 +81,11 @@ export function useProfile() {
         setProfile(data);
       } else {
         console.log("No profile found for user:", user.id);
-        // Set a temporary profile instead of trying to create one
+        // Create a basic profile for users without one
         setProfile({
           id: "missing",
           user_id: user.id,
-          full_name: "Profile Missing",
+          full_name: "Profile Not Found",
           position: "Staff",
           department: "Umum",
           employee_id: "N/A",
@@ -96,7 +97,7 @@ export function useProfile() {
       setProfile({
         id: "temp",
         user_id: user.id,
-        full_name: "Loading Error",
+        full_name: "Failed to Load Profile",
         position: "Staff",
         department: "Umum",
         employee_id: "N/A",

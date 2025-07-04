@@ -20,7 +20,7 @@ export function useUserRole() {
 
     if (user?.id) {
       fetchUserRole();
-      // Set a timeout to prevent infinite loading
+      // Set a timeout to prevent infinite loading - reduced to 3 seconds
       timeoutId = setTimeout(() => {
         console.warn("Role fetch timeout, setting default role");
         setUserRole({
@@ -31,7 +31,7 @@ export function useUserRole() {
           updated_at: new Date().toISOString(),
         });
         setLoading(false);
-      }, 8000); // 8 second timeout
+      }, 3000); // 3 second timeout
     } else if (user === null) {
       // User is explicitly null (not authenticated)
       setUserRole(null);
@@ -61,7 +61,7 @@ export function useUserRole() {
 
       if (error && error.code !== "PGRST116") {
         console.error("Role fetch error:", error);
-        // Don't throw, just set default role and continue
+        // Set default role on error and finish loading
         setUserRole({
           id: "error",
           user_id: user.id,
@@ -69,6 +69,7 @@ export function useUserRole() {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });
+        setLoading(false);
         return;
       }
 
@@ -86,6 +87,7 @@ export function useUserRole() {
           updated_at: new Date().toISOString(),
         });
       }
+      setLoading(false);
     } catch (error) {
       console.error("Error fetching user role:", error);
       // Set a default role to prevent infinite loading
