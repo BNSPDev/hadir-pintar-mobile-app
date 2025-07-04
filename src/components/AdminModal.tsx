@@ -74,21 +74,26 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       }
 
       // Get all unique user_ids from attendance records to catch any users without profiles
-      const { data: attendanceUsers, error: attendanceError } = await supabase
+      const { data: attendanceRecords, error: attendanceError } = await supabase
         .from("attendance_records")
-        .select("user_id")
-        .group("user_id");
+        .select("user_id");
 
       if (attendanceError) {
         console.warn("Attendance users error:", attendanceError);
       }
 
+      // Get unique user_ids from attendance records
+      const uniqueAttendanceUserIds = attendanceRecords
+        ? [...new Set(attendanceRecords.map((record) => record.user_id))]
+        : [];
+
       // Create a set of user_ids from profiles
       const profileUserIds = new Set(profiles?.map((p) => p.user_id) || []);
 
       // Find user_ids that have attendance but no profile
-      const missingProfileUsers =
-        attendanceUsers?.filter((au) => !profileUserIds.has(au.user_id)) || [];
+      const missingProfileUsers = uniqueAttendanceUserIds
+        .filter((userId) => !profileUserIds.has(userId))
+        .map((userId) => ({ user_id: userId }));
 
       // Log missing profiles for debugging
       if (missingProfileUsers.length > 0) {
@@ -96,6 +101,12 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
           `Found ${missingProfileUsers.length} users with attendance but no profile:`,
           missingProfileUsers.map((u) => u.user_id),
         );
+
+        toast({
+          title: "Informasi",
+          description: `Ditemukan ${missingProfileUsers.length} pengguna tanpa profil lengkap`,
+          variant: "default",
+        });
       }
 
       // Create a map of user roles for quick lookup
