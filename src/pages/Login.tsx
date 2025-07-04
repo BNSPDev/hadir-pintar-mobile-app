@@ -58,19 +58,24 @@ export default function Login() {
       <MobileHeader title="Masuk ke Akun" showTime={false} />
 
       <div className="p-4 pt-8">
-        <Card className="w-full max-w-md mx-auto shadow-card border-border bg-card">
-          <CardHeader className="text-center pb-4">
-            <div className="flex justify-center mb-4">
-              <img
-                src="/logo-bnsp.png"
-                alt="BNSP Logo"
-                className="w-16 h-16 object-contain bg-white rounded-lg p-2"
-              />
+        <Card className="w-full max-w-md mx-auto shadow-card border-border bg-gradient-card backdrop-blur-sm">
+          <CardHeader className="text-center pb-6">
+            <div className="flex justify-center mb-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-secondary rounded-2xl blur-sm opacity-20"></div>
+                <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl p-3 shadow-soft">
+                  <img
+                    src="https://cdn.builder.io/api/v1/image/assets%2Fda75669088f743d3b0d001a5b0efe69b%2F0b024383d832423f81e5d60abdb3f7b0?format=webp&width=800"
+                    alt="BNSP Logo"
+                    className="w-12 h-12 object-contain"
+                  />
+                </div>
+              </div>
             </div>
-            <CardTitle className="text-xl font-bold text-card-foreground">
+            <CardTitle className="text-2xl font-bold text-card-foreground mb-2">
               E-Presensi Anggota BNSP
             </CardTitle>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground font-medium">
               Masukkan kredensial untuk melanjutkan
             </p>
           </CardHeader>
