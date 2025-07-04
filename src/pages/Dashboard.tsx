@@ -329,20 +329,22 @@ export default function Dashboard() {
 
         {/* Today's Activity Report */}
         <Card
-          className="shadow-card border border-border bg-card cursor-pointer hover:bg-muted/30 transition-all duration-200 hover:shadow-lg"
+          className="shadow-card border border-border bg-gradient-card cursor-pointer hover:bg-muted/20 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] backdrop-blur-sm"
           onClick={() => setShowActivityModal(true)}
         >
-          <CardContent className="p-5">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-foreground">
+              <div className="flex-1">
+                <h3 className="font-bold text-lg text-foreground mb-1">
                   Laporkan Kegiatan Hari Ini
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground font-medium leading-relaxed">
                   Jangan lupa untuk selalu melaporkan pekerjaanmu setiap harian.
                 </p>
               </div>
-              <ChevronRight className="w-5 h-5 text-primary" />
+              <div className="bg-accent/10 rounded-full p-2">
+                <ChevronRight className="w-6 h-6 text-accent" />
+              </div>
             </div>
           </CardContent>
         </Card>
