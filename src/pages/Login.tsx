@@ -81,9 +81,12 @@ export default function Login() {
           </CardHeader>
 
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-card-foreground">
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-3">
+                <Label
+                  htmlFor="email"
+                  className="text-card-foreground font-semibold text-sm"
+                >
                   Email
                 </Label>
                 <Input
@@ -93,12 +96,15 @@ export default function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Masukkan email"
                   required
-                  className="h-12 bg-input border-border text-foreground placeholder:text-muted-foreground"
+                  className="h-12 bg-input border-border text-foreground placeholder:text-muted-foreground transition-all duration-200 hover:border-secondary/50 focus:border-secondary focus:ring-2 focus:ring-secondary/20"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-card-foreground">
+              <div className="space-y-3">
+                <Label
+                  htmlFor="password"
+                  className="text-card-foreground font-semibold text-sm"
+                >
                   Password
                 </Label>
                 <Input
@@ -108,13 +114,13 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan password"
                   required
-                  className="h-12 bg-input border-border text-foreground placeholder:text-muted-foreground"
+                  className="h-12 bg-input border-border text-foreground placeholder:text-muted-foreground transition-all duration-200 hover:border-secondary/50 focus:border-secondary focus:ring-2 focus:ring-secondary/20"
                 />
               </div>
 
               <Button
                 type="submit"
-                className="w-full h-12 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="w-full h-12 font-semibold bg-gradient-primary hover:shadow-lg hover:scale-[1.02] text-primary-foreground transition-all duration-200 border border-primary/20"
                 disabled={loading}
               >
                 {loading ? (
