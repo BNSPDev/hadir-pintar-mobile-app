@@ -3,12 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { X, Download, Users, Shield, RefreshCw } from "lucide-react";
+import { X, Download, Users, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { repairUserData } from "@/utils/userDataRepair";
 
 interface AdminModalProps {
   isOpen: boolean;
@@ -32,7 +31,6 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [repairing, setRepairing] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -44,11 +42,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     try {
       setLoading(true);
 
-      // Get all authenticated users first from auth.users (this requires admin access)
-      // Since we can't directly access auth.users, we'll get all profiles
-      // and also check for users with attendance records but no profiles
-
-      // Get all profiles first
+      // Get all profiles first - this should include all 8 users (7 + admin)
       const { data: profiles, error: profilesError } = await supabase.from(
         "profiles",
       ).select(`
@@ -65,6 +59,8 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         throw new Error(`Failed to fetch profiles: ${profilesError.message}`);
       }
 
+      console.log(`Found ${profiles?.length || 0} profiles in database`);
+
       // Get all user roles separately
       const { data: userRoles, error: rolesError } = await supabase
         .from("user_roles")
@@ -75,61 +71,12 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         // Continue without roles data if this fails
       }
 
-      // Get all unique user_ids from attendance records to catch any users without profiles
-      const { data: attendanceRecords, error: attendanceError } = await supabase
-        .from("attendance_records")
-        .select("user_id");
-
-      if (attendanceError) {
-        console.warn("Attendance users error:", attendanceError);
-      }
-
-      // Get unique user_ids from attendance records
-      const uniqueAttendanceUserIds = attendanceRecords
-        ? [...new Set(attendanceRecords.map((record) => record.user_id))]
-        : [];
-
-      // Create a set of user_ids from profiles
-      const profileUserIds = new Set(profiles?.map((p) => p.user_id) || []);
-
-      // Find user_ids that have attendance but no profile
-      const missingProfileUsers = uniqueAttendanceUserIds
-        .filter((userId) => !profileUserIds.has(userId))
-        .map((userId) => ({ user_id: userId }));
-
-      // Log missing profiles for debugging
-      if (missingProfileUsers.length > 0) {
-        console.log(
-          `Found ${missingProfileUsers.length} users with attendance but no profile:`,
-          missingProfileUsers.map((u) => u.user_id),
-        );
-
-        toast({
-          title: "Informasi",
-          description: `Ditemukan ${missingProfileUsers.length} pengguna tanpa profil lengkap`,
-          variant: "default",
-        });
-      }
-
       // Create a map of user roles for quick lookup
       const rolesMap = new Map(
         userRoles?.map((role) => [role.user_id, role.role]) || [],
       );
 
-      // Combine profiles with any missing users
-      const allProfiles = [
-        ...(profiles || []),
-        ...missingProfileUsers.map((mu) => ({
-          id: `missing-${mu.user_id}`,
-          user_id: mu.user_id,
-          full_name: "Profil Tidak Lengkap",
-          position: "Tidak Diketahui",
-          department: "Tidak Diketahui",
-          employee_id: "Belum Diisi",
-        })),
-      ];
-
-      if (!allProfiles || allProfiles.length === 0) {
+      if (!profiles || profiles.length === 0) {
         toast({
           title: "Informasi",
           description: "Tidak ada data pengguna ditemukan",
@@ -138,9 +85,9 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         return;
       }
 
-      // Get attendance counts for each user with better error handling
+      // Get attendance counts for each user
       const usersWithStats = await Promise.all(
-        allProfiles.map(async (profile) => {
+        profiles.map(async (profile) => {
           try {
             // Get attendance count
             const { count, error: countError } = await supabase
@@ -364,45 +311,6 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     }
   };
 
-  const handleRepairUserData = async () => {
-    try {
-      setRepairing(true);
-
-      toast({
-        title: "Memulai Perbaikan",
-        description: "Memeriksa dan memperbaiki data pengguna...",
-      });
-
-      const result = await repairUserData();
-
-      if (result.errors.length > 0) {
-        console.error("Repair errors:", result.errors);
-        toast({
-          title: "Perbaikan Selesai dengan Peringatan",
-          description: `Diperbaiki: ${result.createdProfiles} profil, ${result.createdRoles} role. ${result.errors.length} error.`,
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "Perbaikan Berhasil",
-          description: `Dibuat: ${result.createdProfiles} profil baru, ${result.createdRoles} role baru dari ${result.totalUsers} pengguna.`,
-        });
-      }
-
-      // Refresh the user list
-      await fetchUsersData();
-    } catch (error: any) {
-      console.error("Error repairing user data:", error);
-      toast({
-        title: "Error",
-        description: "Gagal memperbaiki data pengguna. Silakan coba lagi.",
-        variant: "destructive",
-      });
-    } finally {
-      setRepairing(false);
-    }
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -436,31 +344,17 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                 </p>
               </div>
             </div>
-            <div className="flex gap-3">
-              <Button
-                onClick={downloadUserData}
-                disabled={downloading || users.length === 0}
-                className="bg-gradient-secondary hover:shadow-lg hover:scale-[1.02] text-white transition-all duration-200"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {downloading ? "Mengunduh..." : `Unduh Rekap (${users.length})`}
-              </Button>
-              <Button
-                onClick={handleRepairUserData}
-                disabled={repairing}
-                variant="outline"
-                className="border-primary text-primary hover:bg-primary hover:text-white transition-all duration-200"
-              >
-                <RefreshCw
-                  className={`w-4 h-4 mr-2 ${repairing ? "animate-spin" : ""}`}
-                />
-                {repairing ? "Memperbaiki..." : "Perbaiki Data"}
-              </Button>
-            </div>
+            <Button
+              onClick={downloadUserData}
+              disabled={downloading || users.length === 0}
+              className="bg-gradient-secondary hover:shadow-lg hover:scale-[1.02] text-white transition-all duration-200"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {downloading ? "Mengunduh..." : `Unduh Rekap (${users.length})`}
+            </Button>
             {users.length === 0 && (
               <p className="text-xs text-muted-foreground mt-2">
-                Tidak ada data untuk diunduh. Coba tombol "Perbaiki Data" untuk
-                memperbaiki data pengguna yang hilang.
+                Tidak ada data untuk diunduh
               </p>
             )}
           </div>
