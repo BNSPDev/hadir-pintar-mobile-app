@@ -1,47 +1,134 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>E-Presensi Anggota BNSP - Aplikasi Absensi Mobile</title>
-    <meta
-      name="description"
-      content="Aplikasi absensi mobile untuk anggota BNSP"
-    />
-    <meta name="author" content="Badan Nasional Sertifikasi Profesi" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <meta name="theme-color" content="#1e40af" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>E-Presensi Anggota BNSP - Aplikasi Absensi Mobile</title>
 
+    <!-- Primary Meta Tags -->
+    <meta
+      name="title"
+      content="E-Presensi Anggota BNSP - Aplikasi Absensi Mobile"
+    />
+    <meta
+      name="description"
+      content="Aplikasi absensi mobile resmi untuk anggota Badan Nasional Sertifikasi Profesi (BNSP). Kelola presensi dengan mudah dan efisien."
+    />
+    <meta name="author" content="Badan Nasional Sertifikasi Profesi" />
+    <meta
+      name="keywords"
+      content="BNSP, absensi, presensi, sertifikasi profesi, mobile app"
+    />
+    <meta name="robots" content="index, follow" />
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1f1f1f" />
+    <meta name="background-color" content="#ffffff" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="E-Presensi BNSP" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="E-Presensi BNSP" />
+
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+    <meta
+      http-equiv="Referrer-Policy"
+      content="strict-origin-when-cross-origin"
+    />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://epresensi-bnsp.com/" />
     <meta
       property="og:title"
       content="E-Presensi Anggota BNSP - Aplikasi Absensi Mobile"
     />
     <meta
       property="og:description"
-      content="Aplikasi absensi mobile untuk anggota BNSP"
+      content="Aplikasi absensi mobile resmi untuk anggota BNSP"
     />
-    <meta property="og:type" content="website" />
     <meta
       property="og:image"
-      content="https://lovable.dev/opengraph-image-p98pqg.png"
+      content="https://cdn.builder.io/api/v1/image/assets%2Fda75669088f743d3b0d001a5b0efe69b%2F0b024383d832423f81e5d60abdb3f7b0?format=webp&width=800"
+    />
+    <meta property="og:locale" content="id_ID" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://epresensi-bnsp.com/" />
+    <meta property="twitter:title" content="E-Presensi Anggota BNSP" />
+    <meta
+      property="twitter:description"
+      content="Aplikasi absensi mobile resmi untuk anggota BNSP"
+    />
+    <meta
+      property="twitter:image"
+      content="https://cdn.builder.io/api/v1/image/assets%2Fda75669088f743d3b0d001a5b0efe69b%2F0b024383d832423f81e5d60abdb3f7b0?format=webp&width=800"
     />
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta
-      name="twitter:image"
-      content="https://lovable.dev/opengraph-image-p98pqg.png"
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link
+      rel="apple-touch-icon"
+      sizes="152x152"
+      href="/apple-touch-icon-152x152.png"
     />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/apple-touch-icon-180x180.png"
+    />
+
+    <!-- Preload Critical Resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- DNS Prefetch for External Resources -->
+    <link rel="dns-prefetch" href="https://vuvykznlggzkzarvfzes.supabase.co" />
+    <link rel="dns-prefetch" href="https://cdn.builder.io" />
   </head>
 
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script src="https://api.tempo.new/proxy-asset?url=https://storage.googleapis.com/tempo-public-assets/error-handling.js"></script>
+
+    <!-- Performance and Error Monitoring -->
+    <script>
+      // Basic performance monitoring
+      window.addEventListener("load", function () {
+        const loadTime = performance.now();
+        if (loadTime > 3000) {
+          console.warn("Slow page load detected:", loadTime + "ms");
+        }
+      });
+
+      // Error reporting for production
+      window.addEventListener("error", function (e) {
+        if (window.location.hostname !== "localhost") {
+          console.error("Global error:", {
+            message: e.message,
+            filename: e.filename,
+            lineno: e.lineno,
+            colno: e.colno,
+            error: e.error,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      });
+    </script>
   </body>
 </html>
