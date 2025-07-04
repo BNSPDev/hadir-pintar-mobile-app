@@ -2,11 +2,14 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { X, Download, Users, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import * as XLSX from "xlsx";
+import { UserRoleManager } from "@/components/UserRoleManager";
 
 interface AdminModalProps {
   isOpen: boolean;
@@ -41,54 +44,151 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     try {
       setLoading(true);
 
-      // Get all users with their profiles and roles
+      // Get all profiles first - this should include all 8 users (7 + admin)
       const { data: profiles, error: profilesError } = await supabase.from(
         "profiles",
       ).select(`
-          *,
-          user_roles!inner(role)
+          id,
+          user_id,
+          full_name,
+          position,
+          department,
+          employee_id
         `);
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error("Profiles error:", profilesError);
+        throw new Error(`Failed to fetch profiles: ${profilesError.message}`);
+      }
+
+      console.log(`Found ${profiles?.length || 0} profiles in database`);
+
+      // Get all user roles separately
+      const { data: userRoles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("user_id, role");
+
+      if (rolesError) {
+        console.warn("User roles error:", rolesError);
+        // Continue without roles data if this fails
+      }
+
+      console.log(`Found ${userRoles?.length || 0} user roles in database`);
+
+      // Create a map of user roles for quick lookup
+      const rolesMap = new Map(
+        userRoles?.map((role) => [role.user_id, role.role]) || [],
+      );
+
+      if (!profiles || profiles.length === 0) {
+        console.error("No profiles found in database!");
+        toast({
+          title: "Error",
+          description:
+            "Tidak ada profil pengguna ditemukan di database. Pastikan data sudah ada.",
+          variant: "destructive",
+        });
+        setUsers([]);
+        return;
+      }
+
+      console.log(
+        "Processing users with profiles:",
+        profiles.map((p) => ({
+          id: p.id,
+          user_id: p.user_id,
+          full_name: p.full_name,
+        })),
+      );
 
       // Get attendance counts for each user
       const usersWithStats = await Promise.all(
         profiles.map(async (profile) => {
-          const { count } = await supabase
-            .from("attendance_records")
-            .select("*", { count: "exact", head: true })
-            .eq("user_id", profile.user_id);
+          try {
+            console.log(
+              `Processing user: ${profile.full_name} (${profile.user_id})`,
+            );
 
-          const { data: lastAttendance } = await supabase
-            .from("attendance_records")
-            .select("date")
-            .eq("user_id", profile.user_id)
-            .order("date", { ascending: false })
-            .limit(1)
-            .maybeSingle();
+            // Get attendance count
+            const { count, error: countError } = await supabase
+              .from("attendance_records")
+              .select("*", { count: "exact", head: true })
+              .eq("user_id", profile.user_id);
 
-          return {
-            id: profile.id,
-            email: profile.user_id, // We'll get actual email from auth if needed
-            full_name: profile.full_name,
-            position: profile.position,
-            department: profile.department,
-            employee_id: profile.employee_id,
-            role: profile.user_roles?.role || "user",
-            total_attendance: count || 0,
-            last_attendance: lastAttendance?.date || null,
-          };
+            if (countError) {
+              console.warn(
+                `Count error for user ${profile.user_id}:`,
+                countError,
+              );
+            }
+
+            // Get last attendance
+            const { data: lastAttendance, error: lastError } = await supabase
+              .from("attendance_records")
+              .select("date")
+              .eq("user_id", profile.user_id)
+              .order("date", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (lastError) {
+              console.warn(
+                `Last attendance error for user ${profile.user_id}:`,
+                lastError,
+              );
+            }
+
+            const userData = {
+              id: profile.id,
+              email: profile.user_id,
+              full_name: profile.full_name || "Nama tidak tersedia",
+              position: profile.position || "Jabatan tidak tersedia",
+              department: profile.department || "Unit kerja tidak tersedia",
+              employee_id: profile.employee_id || "NIP tidak tersedia",
+              role: rolesMap.get(profile.user_id) || "user",
+              total_attendance: count || 0,
+              last_attendance: lastAttendance?.date || null,
+            };
+
+            console.log(`User processed:`, userData);
+            return userData;
+          } catch (userError) {
+            console.error(
+              `Error processing user ${profile.user_id}:`,
+              userError,
+            );
+            // Return basic user data even if attendance fetch fails
+            return {
+              id: profile.id,
+              email: profile.user_id,
+              full_name: profile.full_name || "Nama tidak tersedia",
+              position: profile.position || "Jabatan tidak tersedia",
+              department: profile.department || "Unit kerja tidak tersedia",
+              employee_id: profile.employee_id || "NIP tidak tersedia",
+              role: rolesMap.get(profile.user_id) || "user",
+              total_attendance: 0,
+              last_attendance: null,
+            };
+          }
         }),
       );
 
+      console.log(`Final user list:`, usersWithStats);
       setUsers(usersWithStats);
-    } catch (error) {
+
+      toast({
+        title: "Berhasil",
+        description: `Data ${usersWithStats.length} pengguna berhasil dimuat dari database`,
+      });
+    } catch (error: any) {
       console.error("Error fetching users data:", error);
       toast({
         title: "Error",
-        description: "Gagal memuat data pengguna",
+        description:
+          error.message || "Gagal memuat data pengguna. Silakan coba lagi.",
         variant: "destructive",
       });
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -98,21 +198,63 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     try {
       setDownloading(true);
 
-      // Get detailed attendance records for all users
-      const { data: attendanceRecords, error } = await supabase
+      // Get attendance records first
+      const { data: attendanceRecords, error: attendanceError } = await supabase
         .from("attendance_records")
         .select(
           `
-          *,
-          profiles!inner(full_name, position, department, employee_id)
+          id,
+          date,
+          clock_in_time,
+          clock_out_time,
+          work_type,
+          status,
+          daily_report,
+          user_id
         `,
         )
         .order("date", { ascending: false });
 
-      if (error) throw error;
+      if (attendanceError) {
+        console.error("Supabase error:", attendanceError);
+        throw new Error(`Database error: ${attendanceError.message}`);
+      }
 
-      // Convert to CSV format
-      const csvHeaders = [
+      // Get all profiles separately
+      const { data: profiles, error: profilesError } = await supabase.from(
+        "profiles",
+      ).select(`
+          user_id,
+          full_name,
+          position,
+          department,
+          employee_id
+        `);
+
+      if (profilesError) {
+        console.error("Profiles error:", profilesError);
+        throw new Error(`Database error: ${profilesError.message}`);
+      }
+
+      // Create a map of profiles for quick lookup
+      const profilesMap = new Map(
+        profiles?.map((profile) => [profile.user_id, profile]) || [],
+      );
+
+      if (!attendanceRecords || attendanceRecords.length === 0) {
+        toast({
+          title: "Informasi",
+          description: "Tidak ada data presensi untuk diunduh",
+          variant: "default",
+        });
+        return;
+      }
+
+      // Create new workbook
+      const workbook = XLSX.utils.book_new();
+
+      // Headers for all sheets
+      const headers = [
         "Tanggal",
         "Nama Lengkap",
         "NIP",
@@ -125,50 +267,150 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         "Laporan Kegiatan",
       ];
 
-      const csvRows = attendanceRecords.map((record) => [
-        format(new Date(record.date), "dd/MM/yyyy"),
-        record.profiles.full_name,
-        record.profiles.employee_id,
-        record.profiles.position,
-        record.profiles.department,
-        record.clock_in_time
-          ? format(new Date(record.clock_in_time), "HH:mm")
-          : "-",
-        record.clock_out_time
-          ? format(new Date(record.clock_out_time), "HH:mm")
-          : "-",
-        record.work_type,
-        record.status,
-        record.daily_report || "-",
-      ]);
+      // Group attendance records by user
+      const recordsByUser = new Map();
 
-      const csvContent = [csvHeaders, ...csvRows]
-        .map((row) => row.map((field) => `"${field}"`).join(","))
-        .join("\n");
+      attendanceRecords.forEach((record) => {
+        if (!recordsByUser.has(record.user_id)) {
+          recordsByUser.set(record.user_id, []);
+        }
+        recordsByUser.get(record.user_id).push(record);
+      });
+
+      console.log(`Creating sheets for ${recordsByUser.size} users`);
+
+      // Create a sheet for each user
+      recordsByUser.forEach((userRecords, userId) => {
+        const profile = profilesMap.get(userId);
+        const userName = profile?.full_name || `User-${userId.slice(-6)}`;
+
+        // Sanitize sheet name (Excel has restrictions)
+        const sheetName = userName
+          .replace(/[\\\/\?\*\[\]]/g, "-")
+          .substring(0, 31);
+
+        const sheetData = [
+          headers,
+          ...userRecords.map((record) => {
+            const recordDate = record.date ? new Date(record.date) : null;
+            const clockInTime = record.clock_in_time
+              ? new Date(record.clock_in_time)
+              : null;
+            const clockOutTime = record.clock_out_time
+              ? new Date(record.clock_out_time)
+              : null;
+
+            return [
+              recordDate ? format(recordDate, "dd/MM/yyyy") : "-",
+              profile?.full_name || "Profil Tidak Ditemukan",
+              profile?.employee_id || "-",
+              profile?.position || "-",
+              profile?.department || "-",
+              clockInTime ? format(clockInTime, "HH:mm") : "-",
+              clockOutTime ? format(clockOutTime, "HH:mm") : "-",
+              record.work_type || "-",
+              record.status || "-",
+              record.daily_report || "-",
+            ];
+          }),
+        ];
+
+        // Create worksheet
+        const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+
+        // Auto-size columns
+        const colWidths = [
+          { wch: 12 }, // Tanggal
+          { wch: 20 }, // Nama
+          { wch: 15 }, // NIP
+          { wch: 15 }, // Jabatan
+          { wch: 15 }, // Unit Kerja
+          { wch: 10 }, // Jam Masuk
+          { wch: 10 }, // Jam Pulang
+          { wch: 8 }, // Tipe Kerja
+          { wch: 12 }, // Status
+          { wch: 30 }, // Laporan
+        ];
+        worksheet["!cols"] = colWidths;
+
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+      });
+
+      // Also create a summary sheet
+      const summaryData = [
+        ["Ringkasan Presensi BNSP", "", "", "", ""],
+        ["Tanggal Download:", format(new Date(), "dd/MM/yyyy HH:mm")],
+        ["Total Pengguna:", recordsByUser.size],
+        ["Total Record:", attendanceRecords.length],
+        [""],
+        ["Nama", "NIP", "Total Presensi", "Terakhir Hadir", "Status"],
+        ...Array.from(recordsByUser.entries()).map(([userId, userRecords]) => {
+          const profile = profilesMap.get(userId);
+          const lastRecord = userRecords[0]; // Records are ordered by date desc
+          const lastDate = lastRecord
+            ? format(new Date(lastRecord.date), "dd/MM/yyyy")
+            : "-";
+
+          return [
+            profile?.full_name || "Tidak Diketahui",
+            profile?.employee_id || "-",
+            userRecords.length,
+            lastDate,
+            userRecords.length > 0 ? "Aktif" : "Tidak Aktif",
+          ];
+        }),
+      ];
+
+      const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+      summarySheet["!cols"] = [
+        { wch: 25 }, // Nama
+        { wch: 15 }, // NIP
+        { wch: 15 }, // Total
+        { wch: 15 }, // Terakhir
+        { wch: 12 }, // Status
+      ];
+
+      // Insert summary sheet at the beginning
+      XLSX.utils.book_append_sheet(workbook, summarySheet, "Ringkasan", 0);
+
+      // Generate Excel file
+      const excelBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+        bookSST: false,
+      });
 
       // Create and download file
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const blob = new Blob([excelBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
       link.setAttribute(
         "download",
-        `rekap-presensi-${format(new Date(), "yyyy-MM-dd")}.csv`,
+        `rekap-presensi-bnsp-${format(new Date(), "yyyy-MM-dd")}.xlsx`,
       );
       link.style.visibility = "hidden";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
+      // Clean up the URL object
+      URL.revokeObjectURL(url);
+
       toast({
         title: "Berhasil",
-        description: "Data rekap presensi berhasil diunduh",
+        description: `File Excel dengan ${recordsByUser.size} sheet pengguna berhasil diunduh`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error downloading data:", error);
       toast({
         title: "Error",
-        description: "Gagal mengunduh data",
+        description:
+          error.message || "Gagal mengunduh data. Silakan coba lagi.",
         variant: "destructive",
       });
     } finally {
@@ -197,16 +439,36 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         </CardHeader>
 
         <CardContent className="flex-1 flex flex-col">
+          {/* User Role Management */}
+          <UserRoleManager onUserRoleAssigned={fetchUsersData} />
+
           {/* Download Section */}
-          <div className="mb-6">
+          <div className="mb-6 p-4 bg-muted/30 rounded-lg border border-border">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="font-semibold text-card-foreground">
+                  Download Rekap Presensi
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Download data presensi dalam format Excel multi-sheet
+                </p>
+              </div>
+            </div>
             <Button
               onClick={downloadUserData}
-              disabled={downloading}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              disabled={downloading || users.length === 0}
+              className="bg-gradient-secondary hover:shadow-lg hover:scale-[1.02] text-white transition-all duration-200"
             >
               <Download className="w-4 h-4 mr-2" />
-              {downloading ? "Mengunduh..." : "Unduh Rekap Semua User"}
+              {downloading
+                ? "Mengunduh..."
+                : `Download Excel (${users.length} users)`}
             </Button>
+            {users.length === 0 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Tidak ada data untuk diunduh
+              </p>
+            )}
           </div>
 
           {/* Users List */}
@@ -217,12 +479,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
             </h3>
             <ScrollArea className="h-full">
               {loading ? (
-                <div className="text-center py-8">
-                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">
-                    Memuat data pengguna...
-                  </p>
-                </div>
+                <LoadingSpinner message="Memuat data pengguna..." />
               ) : users.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">

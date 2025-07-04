@@ -7,6 +7,7 @@ import { MobileHeader } from "@/components/MobileHeader";
 import { BottomNav } from "@/components/BottomNav";
 import { ClockOutModal } from "@/components/ClockOutModal";
 import { ActivityReportModal } from "@/components/ActivityReportModal";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
@@ -162,14 +163,7 @@ export default function Dashboard() {
   };
 
   if (authLoading || profileLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Memuat...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen message="Memuat dashboard..." />;
   }
 
   if (!user) {
@@ -208,22 +202,25 @@ export default function Dashboard() {
       <MobileHeader title={profile?.full_name || "User"} />
       <div className="p-4 space-y-6 mt-2">
         {/* User Profile Card */}
-        <Card className="shadow-card border border-border bg-card">
-          <CardContent className="p-5">
+        <Card className="shadow-card border border-border bg-gradient-card backdrop-blur-sm">
+          <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <Avatar className="w-16 h-16 ring-2 ring-primary/20">
-                <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
-                  {profile?.full_name?.charAt(0) || "U"}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="w-16 h-16 ring-2 ring-accent/30 shadow-soft">
+                  <AvatarFallback className="bg-gradient-primary text-primary-foreground text-lg font-bold">
+                    {profile?.full_name?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-success rounded-full border-2 border-white"></div>
+              </div>
               <div className="flex-1">
-                <h2 className="font-bold text-lg text-foreground">
+                <h2 className="font-bold text-xl text-foreground">
                   {profile?.full_name || "Loading..."}
                 </h2>
-                <p className="text-sm font-medium text-primary">
+                <p className="text-sm font-semibold text-secondary">
                   {profile?.position || "STAFF"}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground font-medium">
                   {profile?.department || "Department"}
                 </p>
               </div>
@@ -232,12 +229,17 @@ export default function Dashboard() {
         </Card>
 
         {/* Current Time */}
-        <Card className="shadow-card border border-border bg-gradient-to-br from-primary/5 to-primary/10">
-          <CardContent className="p-5 text-center">
-            <p className="text-sm text-muted-foreground mb-2">
-              {indonesianDate}
-            </p>
-            <p className="text-3xl font-bold text-primary">{timeString}</p>
+        <Card className="shadow-card border border-accent/20 bg-gradient-to-br from-accent/5 via-background to-secondary/5 backdrop-blur-sm">
+          <CardContent className="p-6 text-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-transparent pointer-events-none"></div>
+            <div className="relative z-10">
+              <p className="text-sm text-muted-foreground mb-3 font-medium tracking-wide">
+                {indonesianDate}
+              </p>
+              <p className="text-4xl font-bold text-primary tracking-tight">
+                {timeString}
+              </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -246,22 +248,22 @@ export default function Dashboard() {
           {!todayRecord?.clock_in_time ? (
             <Button
               onClick={() => setShowWorkTypeSelector(true)}
-              className="h-20 bg-attendance-wfo hover:bg-attendance-wfo/90 text-white font-semibold text-lg"
+              className="h-24 bg-gradient-secondary hover:shadow-card hover:scale-[1.02] text-white font-bold text-lg border border-secondary/20 shadow-soft"
               disabled={loading}
             >
               <div className="text-center">
-                <Clock className="w-6 h-6 mx-auto mb-1" />
-                Masuk
+                <Clock className="w-7 h-7 mx-auto mb-2" />
+                <span className="text-base">Masuk</span>
               </div>
             </Button>
           ) : (
             <Button
               disabled
-              className="h-20 bg-success text-success-foreground font-semibold text-lg"
+              className="h-24 bg-gradient-to-br from-success to-success/80 text-success-foreground font-bold text-lg shadow-soft border border-success/20"
             >
               <div className="text-center">
-                <CheckCircle className="w-6 h-6 mx-auto mb-1" />
-                <div className="text-xs">
+                <CheckCircle className="w-7 h-7 mx-auto mb-2" />
+                <div className="text-xs font-semibold">
                   {format(new Date(todayRecord.clock_in_time), "HH:mm")}
                 </div>
               </div>
@@ -273,35 +275,35 @@ export default function Dashboard() {
             disabled={
               !todayRecord?.clock_in_time || !!todayRecord?.clock_out_time
             }
-            className="h-20 bg-warning hover:bg-warning/90 text-warning-foreground font-semibold text-lg disabled:opacity-50"
+            className="h-24 bg-gradient-accent hover:shadow-card hover:scale-[1.02] text-accent-foreground font-bold text-lg disabled:opacity-50 border border-accent/20 shadow-soft"
           >
             <div className="text-center">
-              <Clock className="w-6 h-6 mx-auto mb-1" />
-              Pulang
+              <Clock className="w-7 h-7 mx-auto mb-2" />
+              <span className="text-base">Pulang</span>
             </div>
           </Button>
         </div>
 
         {/* Work Type Selector Modal */}
         {showWorkTypeSelector && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
-              <h3 className="font-bold text-lg mb-4 text-center">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-white/20">
+              <h3 className="font-bold text-xl mb-6 text-center text-foreground">
                 Pilih Tipe Kerja
               </h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 {workTypeOptions.map((option) => {
                   const Icon = option.icon;
                   return (
                     <Button
                       key={option.type}
                       onClick={() => handleClockIn(option.type)}
-                      className={`h-20 ${option.color} hover:opacity-90 text-white font-semibold`}
+                      className={`h-24 ${option.color} hover:scale-[1.05] hover:shadow-lg text-white font-bold transition-all duration-200 border border-white/20`}
                       disabled={loading}
                     >
                       <div className="text-center">
-                        <Icon className="w-6 h-6 mx-auto mb-2" />
-                        {option.label}
+                        <Icon className="w-7 h-7 mx-auto mb-2" />
+                        <span className="text-base">{option.label}</span>
                       </div>
                     </Button>
                   );
@@ -310,7 +312,7 @@ export default function Dashboard() {
               <Button
                 variant="outline"
                 onClick={() => setShowWorkTypeSelector(false)}
-                className="w-full mt-4"
+                className="w-full mt-6 h-12 font-semibold border-2 hover:bg-muted"
                 disabled={loading}
               >
                 Batal
@@ -321,20 +323,22 @@ export default function Dashboard() {
 
         {/* Today's Activity Report */}
         <Card
-          className="shadow-card border border-border bg-card cursor-pointer hover:bg-muted/30 transition-all duration-200 hover:shadow-lg"
+          className="shadow-card border border-border bg-gradient-card cursor-pointer hover:bg-muted/20 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] backdrop-blur-sm"
           onClick={() => setShowActivityModal(true)}
         >
-          <CardContent className="p-5">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-foreground">
+              <div className="flex-1">
+                <h3 className="font-bold text-lg text-foreground mb-1">
                   Laporkan Kegiatan Hari Ini
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground font-medium leading-relaxed">
                   Jangan lupa untuk selalu melaporkan pekerjaanmu setiap harian.
                 </p>
               </div>
-              <ChevronRight className="w-5 h-5 text-primary" />
+              <div className="bg-accent/10 rounded-full p-2">
+                <ChevronRight className="w-6 h-6 text-accent" />
+              </div>
             </div>
           </CardContent>
         </Card>

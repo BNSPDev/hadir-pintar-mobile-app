@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 
@@ -16,42 +16,86 @@ export function useUserRole() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    let timeoutId: NodeJS.Timeout;
+
+    if (user?.id) {
       fetchUserRole();
-    } else {
+      // Set a timeout to prevent infinite loading
+      timeoutId = setTimeout(() => {
+        console.warn("Role fetch timeout, setting default role");
+        setUserRole({
+          id: "timeout",
+          user_id: user.id,
+          role: "user",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        setLoading(false);
+      }, 8000); // 8 second timeout
+    } else if (user === null) {
+      // User is explicitly null (not authenticated)
       setUserRole(null);
       setLoading(false);
     }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [user]);
 
   const fetchUserRole = async () => {
+    if (!user?.id) {
+      console.log("No user ID available for role fetch");
+      setLoading(false);
+      return;
+    }
+
     try {
+      console.log("Fetching role for user:", user.id);
+
       const { data, error } = await supabase
         .from("user_roles")
         .select("*")
-        .eq("user_id", user?.id)
+        .eq("user_id", user.id)
         .maybeSingle();
 
-      if (error && error.code !== "PGRST116") throw error;
+      if (error && error.code !== "PGRST116") {
+        console.error("Role fetch error:", error);
+        // Don't throw, just set default role and continue
+        setUserRole({
+          id: "error",
+          user_id: user.id,
+          role: "user",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        return;
+      }
 
-      // If no role exists, create default user role
-      if (!data) {
-        const { data: newRole, error: insertError } = await supabase
-          .from("user_roles")
-          .insert({
-            user_id: user?.id,
-            role: "user",
-          })
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        setUserRole(newRole);
-      } else {
+      if (data) {
+        console.log("Role found:", data);
         setUserRole(data);
+      } else {
+        console.log("No role found for user:", user.id);
+        // Set default role instead of trying to create one
+        setUserRole({
+          id: "default",
+          user_id: user.id,
+          role: "user",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
       }
     } catch (error) {
       console.error("Error fetching user role:", error);
+      // Set a default role to prevent infinite loading
+      setUserRole({
+        id: "temp",
+        user_id: user.id,
+        role: "user",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
     } finally {
       setLoading(false);
     }

@@ -1,13 +1,17 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { User, Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, metadata: any) => Promise<{ error: any }>;
+  signUp: (
+    email: string,
+    password: string,
+    metadata: any,
+  ) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -20,13 +24,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -48,15 +52,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, metadata: any) => {
     const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: metadata
-      }
+        data: metadata,
+      },
     });
+
+    // If signup is successful and user is created, create profile and role
+    if (!error && data.user) {
+      try {
+        // Create profile
+        const { error: profileError } = await supabase.from("profiles").insert({
+          user_id: data.user.id,
+          full_name: metadata.full_name || email.split("@")[0],
+          position: metadata.position || "Staff",
+          department: metadata.department || "Umum",
+          employee_id:
+            metadata.employee_id || `EMP-${Date.now().toString().slice(-6)}`,
+        });
+
+        if (profileError) {
+          console.error("Error creating profile:", profileError);
+        }
+
+        // Create user role
+        const { error: roleError } = await supabase.from("user_roles").insert({
+          user_id: data.user.id,
+          role: "user",
+        });
+
+        if (roleError) {
+          console.error("Error creating user role:", roleError);
+        }
+      } catch (setupError) {
+        console.error("Error setting up user data:", setupError);
+      }
+    }
+
     return { error };
   };
 
@@ -65,14 +101,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      session,
-      loading,
-      signIn,
-      signUp,
-      signOut,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading,
+        signIn,
+        signUp,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -81,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }
