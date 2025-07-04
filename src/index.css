@@ -6,58 +6,72 @@
 
 @layer base {
   :root {
-    /* BNSP Red, Yellow, Black Theme */
-    --background: 0 0% 98%;
-    --foreground: 0 0% 10%;
+    /* BNSP Professional Color Palette - Inspired by Logo */
+    --background: 0 0% 99%;
+    --foreground: 0 0% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    --card-foreground: 0 0% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover-foreground: 0 0% 8%;
 
-    --primary: 0 84% 45%;
-    --primary-foreground: 0 0% 100%;
-    --primary-light: 0 84% 55%;
-    --primary-dark: 0 84% 35%;
+    /* Primary: Professional deep charcoal/black inspired by BNSP logo */
+    --primary: 0 0% 12%;
+    --primary-foreground: 0 0% 98%;
+    --primary-light: 0 0% 18%;
+    --primary-dark: 0 0% 6%;
 
-    --secondary: 48 100% 50%;
-    --secondary-foreground: 0 0% 10%;
+    /* Secondary: Rich red accent from BNSP logo - more sophisticated */
+    --secondary: 0 75% 42%;
+    --secondary-foreground: 0 0% 98%;
 
     --muted: 0 0% 96%;
     --muted-foreground: 0 0% 45%;
 
-    --accent: 48 100% 50%;
-    --accent-foreground: 0 0% 10%;
+    /* Accent: Gold/amber from BNSP logo */
+    --accent: 45 100% 48%;
+    --accent-foreground: 0 0% 12%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 75% 45%;
+    --destructive-foreground: 0 0% 98%;
 
     --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
+    --success-foreground: 0 0% 98%;
 
-    --warning: 48 100% 50%;
-    --warning-foreground: 0 0% 10%;
+    --warning: 45 100% 48%;
+    --warning-foreground: 0 0% 12%;
 
-    --border: 0 0% 91%;
-    --input: 0 0% 91%;
-    --ring: 0 84% 45%;
+    --border: 0 0% 90%;
+    --input: 0 0% 97%;
+    --ring: 0 75% 42%;
 
-    /* Mobile-specific colors */
-    --mobile-header: 0 84% 45%;
-    --mobile-header-foreground: 0 0% 100%;
-    --attendance-wfo: 0 84% 45%;
+    /* Mobile-specific colors using BNSP palette */
+    --mobile-header: 0 0% 12%;
+    --mobile-header-foreground: 0 0% 98%;
+    --attendance-wfo: 0 75% 42%;
     --attendance-dl: 142 71% 45%;
-    --attendance-cuti: 48 100% 50%;
-    --attendance-sakit: 0 84% 60%;
+    --attendance-cuti: 45 100% 48%;
+    --attendance-sakit: 0 75% 52%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(0 84% 45%), hsl(0 84% 55%));
+    /* Elegant gradients inspired by BNSP branding */
+    --gradient-primary: linear-gradient(135deg, hsl(0 0% 12%), hsl(0 0% 18%));
+    --gradient-secondary: linear-gradient(
+      135deg,
+      hsl(0 75% 42%),
+      hsl(0 75% 48%)
+    );
+    --gradient-accent: linear-gradient(
+      135deg,
+      hsl(45 100% 48%),
+      hsl(45 100% 55%)
+    );
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 98%));
 
-    /* Shadows */
-    --shadow-soft: 0 2px 8px hsl(0 84% 45% / 0.1);
-    --shadow-card: 0 4px 12px hsl(0 84% 45% / 0.15);
+    /* Professional shadows with subtle red undertone */
+    --shadow-soft: 0 2px 8px hsl(0 0% 0% / 0.06);
+    --shadow-card: 0 4px 16px hsl(0 0% 0% / 0.08);
+    --shadow-header: 0 4px 20px hsl(0 75% 42% / 0.12);
 
     --radius: 12px;
 
