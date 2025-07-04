@@ -29,62 +29,68 @@ const queryClient = new QueryClient({
   },
 });
 
-function AppRoutes() {
+const AppRoutes: React.FC = () => {
   // Create combined routes array with protected routes
-  const appRoutes = [
-    {
-      path: "/",
-      element: (
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      ),
-    },
-    { path: "/login", element: <Login /> },
-    {
-      path: "/profile",
-      element: (
-        <ProtectedRoute>
-          <Profile />
-        </ProtectedRoute>
-      ),
-    },
-    {
-      path: "/attendance-history",
-      element: (
-        <ProtectedRoute>
-          <AttendanceHistory />
-        </ProtectedRoute>
-      ),
-    },
-    ...(import.meta.env.VITE_TEMPO
-      ? [{ path: "/tempobook/*", element: null }]
-      : []),
-    { path: "*", element: <NotFound /> },
-  ];
+  const appRoutes = React.useMemo(
+    () => [
+      {
+        path: "/",
+        element: (
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        ),
+      },
+      { path: "/login", element: <Login /> },
+      {
+        path: "/profile",
+        element: (
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/attendance-history",
+        element: (
+          <ProtectedRoute>
+            <AttendanceHistory />
+          </ProtectedRoute>
+        ),
+      },
+      ...(import.meta.env.VITE_TEMPO
+        ? [{ path: "/tempobook/*", element: null }]
+        : []),
+      { path: "*", element: <NotFound /> },
+    ],
+    [],
+  );
 
   // Combine tempo routes with app routes if VITE_TEMPO is enabled
-  const allRoutes = import.meta.env.VITE_TEMPO
-    ? [...routes, ...appRoutes]
-    : appRoutes;
+  const allRoutes = React.useMemo(
+    () => (import.meta.env.VITE_TEMPO ? [...routes, ...appRoutes] : appRoutes),
+    [appRoutes],
+  );
 
   return useRoutes(allRoutes);
-}
+};
 
-const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
-);
+const App: React.FC = () => {
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
+};
 
 export default App;
