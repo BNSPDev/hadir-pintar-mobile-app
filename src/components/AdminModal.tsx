@@ -298,15 +298,32 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
 
         <CardContent className="flex-1 flex flex-col">
           {/* Download Section */}
-          <div className="mb-6">
+          <div className="mb-6 p-4 bg-muted/30 rounded-lg border border-border">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="font-semibold text-card-foreground">
+                  Download Rekap Presensi
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Unduh data rekap presensi semua anggota dalam format CSV
+                </p>
+              </div>
+            </div>
             <Button
               onClick={downloadUserData}
-              disabled={downloading}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              disabled={downloading || users.length === 0}
+              className="bg-gradient-secondary hover:shadow-lg hover:scale-[1.02] text-white transition-all duration-200"
             >
               <Download className="w-4 h-4 mr-2" />
-              {downloading ? "Mengunduh..." : "Unduh Rekap Semua User"}
+              {downloading
+                ? "Mengunduh..."
+                : `Unduh Rekap Semua User (${users.length})`}
             </Button>
+            {users.length === 0 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Tidak ada data untuk diunduh
+              </p>
+            )}
           </div>
 
           {/* Users List */}
