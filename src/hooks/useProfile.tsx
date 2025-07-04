@@ -17,23 +17,35 @@ export function useProfile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       fetchProfile();
-    } else {
+    } else if (user === null) {
+      // User is explicitly null (not authenticated)
       setProfile(null);
       setLoading(false);
     }
+    // If user is undefined, keep loading (auth state not yet determined)
   }, [user]);
 
   const fetchProfile = async () => {
+    if (!user?.id) {
+      console.log("No user ID available for profile fetch");
+      setLoading(false);
+      return;
+    }
+
     try {
+      setLoading(true);
+      console.log("Fetching profile for user:", user.id);
+
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("user_id", user?.id)
+        .eq("user_id", user.id)
         .maybeSingle();
 
       if (error && error.code !== "PGRST116") {
+        console.error("Profile fetch error:", error);
         throw error;
       }
 
@@ -41,21 +53,29 @@ export function useProfile() {
       if (!data) {
         console.log(
           "No profile found, creating default profile for user:",
-          user?.id,
+          user.id,
         );
 
         // Get user email from auth
         const {
           data: { user: authUser },
+          error: authError,
         } = await supabase.auth.getUser();
 
+        if (authError) {
+          console.error("Auth user fetch error:", authError);
+          throw authError;
+        }
+
         const defaultProfile = {
-          user_id: user?.id,
+          user_id: user.id,
           full_name: authUser?.email?.split("@")[0] || "User Baru",
           position: "Staff",
           department: "Umum",
           employee_id: `EMP-${Date.now().toString().slice(-6)}`,
         };
+
+        console.log("Creating profile with data:", defaultProfile);
 
         const { data: newProfile, error: insertError } = await supabase
           .from("profiles")
@@ -68,12 +88,23 @@ export function useProfile() {
           throw insertError;
         }
 
+        console.log("Profile created successfully:", newProfile);
         setProfile(newProfile);
       } else {
+        console.log("Profile found:", data);
         setProfile(data);
       }
     } catch (error) {
       console.error("Error fetching/creating profile:", error);
+      // Set a minimal profile to prevent infinite loading
+      setProfile({
+        id: "temp",
+        user_id: user.id,
+        full_name: "Error Loading Profile",
+        position: "Staff",
+        department: "Umum",
+        employee_id: "N/A",
+      });
     } finally {
       setLoading(false);
     }
