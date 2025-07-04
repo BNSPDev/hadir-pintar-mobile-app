@@ -34,7 +34,6 @@ export function useUserRole() {
     }
 
     try {
-      setLoading(true);
       console.log("Fetching role for user:", user.id);
 
       const { data, error } = await supabase
@@ -45,35 +44,33 @@ export function useUserRole() {
 
       if (error && error.code !== "PGRST116") {
         console.error("Role fetch error:", error);
-        throw error;
+        // Don't throw, just set default role and continue
+        setUserRole({
+          id: "error",
+          user_id: user.id,
+          role: "user",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        return;
       }
 
-      // If no role exists, create default user role
-      if (!data) {
-        console.log("No role found, creating default role for user:", user.id);
-
-        const { data: newRole, error: insertError } = await supabase
-          .from("user_roles")
-          .insert({
-            user_id: user.id,
-            role: "user",
-          })
-          .select()
-          .single();
-
-        if (insertError) {
-          console.error("Error creating role:", insertError);
-          throw insertError;
-        }
-
-        console.log("Role created successfully:", newRole);
-        setUserRole(newRole);
-      } else {
+      if (data) {
         console.log("Role found:", data);
         setUserRole(data);
+      } else {
+        console.log("No role found for user:", user.id);
+        // Set default role instead of trying to create one
+        setUserRole({
+          id: "default",
+          user_id: user.id,
+          role: "user",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
       }
     } catch (error) {
-      console.error("Error fetching/creating user role:", error);
+      console.error("Error fetching user role:", error);
       // Set a default role to prevent infinite loading
       setUserRole({
         id: "temp",

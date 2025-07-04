@@ -35,7 +35,6 @@ export function useProfile() {
     }
 
     try {
-      setLoading(true);
       console.log("Fetching profile for user:", user.id);
 
       const { data, error } = await supabase
@@ -46,61 +45,40 @@ export function useProfile() {
 
       if (error && error.code !== "PGRST116") {
         console.error("Profile fetch error:", error);
-        throw error;
-      }
-
-      // If no profile exists, create a default one
-      if (!data) {
-        console.log(
-          "No profile found, creating default profile for user:",
-          user.id,
-        );
-
-        // Get user email from auth
-        const {
-          data: { user: authUser },
-          error: authError,
-        } = await supabase.auth.getUser();
-
-        if (authError) {
-          console.error("Auth user fetch error:", authError);
-          throw authError;
-        }
-
-        const defaultProfile = {
+        // Don't throw, just set empty profile and continue
+        setProfile({
+          id: "error",
           user_id: user.id,
-          full_name: authUser?.email?.split("@")[0] || "User Baru",
+          full_name: "Profile Error",
           position: "Staff",
           department: "Umum",
-          employee_id: `EMP-${Date.now().toString().slice(-6)}`,
-        };
+          employee_id: "N/A",
+        });
+        return;
+      }
 
-        console.log("Creating profile with data:", defaultProfile);
-
-        const { data: newProfile, error: insertError } = await supabase
-          .from("profiles")
-          .insert(defaultProfile)
-          .select()
-          .single();
-
-        if (insertError) {
-          console.error("Error creating profile:", insertError);
-          throw insertError;
-        }
-
-        console.log("Profile created successfully:", newProfile);
-        setProfile(newProfile);
-      } else {
+      if (data) {
         console.log("Profile found:", data);
         setProfile(data);
+      } else {
+        console.log("No profile found for user:", user.id);
+        // Set a temporary profile instead of trying to create one
+        setProfile({
+          id: "missing",
+          user_id: user.id,
+          full_name: "Profile Missing",
+          position: "Staff",
+          department: "Umum",
+          employee_id: "N/A",
+        });
       }
     } catch (error) {
-      console.error("Error fetching/creating profile:", error);
+      console.error("Error fetching profile:", error);
       // Set a minimal profile to prevent infinite loading
       setProfile({
         id: "temp",
         user_id: user.id,
-        full_name: "Error Loading Profile",
+        full_name: "Loading Error",
         position: "Staff",
         department: "Umum",
         employee_id: "N/A",
