@@ -5,8 +5,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MobileHeader } from "@/components/MobileHeader";
 import { BottomNav } from "@/components/BottomNav";
 import { EditProfileModal } from "@/components/EditProfileModal";
+import { AboutModal } from "@/components/AboutModal";
+import { TermsModal } from "@/components/TermsModal";
+import { PrivacyModal } from "@/components/PrivacyModal";
+import { AdminModal } from "@/components/AdminModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import {
@@ -17,15 +22,21 @@ import {
   LogOut,
   ChevronRight,
   Edit,
+  Settings,
 } from "lucide-react";
 
 export default function Profile() {
   const { user, signOut, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading, fetchProfile } = useProfile();
+  const { userRole, loading: roleLoading, isAdmin, updateRole } = useUserRole();
   const { toast } = useToast();
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
 
-  if (authLoading || profileLoading) {
+  if (authLoading || profileLoading || roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -58,21 +69,41 @@ export default function Profile() {
 
   const menuItems = [
     { icon: User, label: "Edit Profil", action: () => setShowEditModal(true) },
-    { icon: Info, label: "Tentang Aplikasi", action: () => {} },
-    { icon: FileText, label: "Ketentuan Layanan", action: () => {} },
-    { icon: Shield, label: "Kebijakan Privasi", action: () => {} },
+    ...(isAdmin()
+      ? [
+          {
+            icon: Settings,
+            label: "Panel Admin",
+            action: () => setShowAdminModal(true),
+          },
+        ]
+      : []),
+    {
+      icon: Info,
+      label: "Tentang Aplikasi",
+      action: () => setShowAboutModal(true),
+    },
+    {
+      icon: FileText,
+      label: "Ketentuan Layanan",
+      action: () => setShowTermsModal(true),
+    },
+    {
+      icon: Shield,
+      label: "Kebijakan Privasi",
+      action: () => setShowPrivacyModal(true),
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen pb-24 bg-background">
       <MobileHeader title="Akun" />
-
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6 mt-2">
         {/* User Profile Card */}
-        <Card className="shadow-card border-0">
+        <Card className="shadow-card border border-border bg-card">
           <CardContent className="p-6">
             <div className="flex items-center gap-4 mb-6">
-              <Avatar className="w-20 h-20">
+              <Avatar className="w-20 h-20 ring-2 ring-primary/20">
                 <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
                   {profile?.full_name?.charAt(0) || "U"}
                 </AvatarFallback>
@@ -87,6 +118,13 @@ export default function Profile() {
                 <p className="text-sm text-muted-foreground">
                   {profile?.department || "Department"}
                 </p>
+                {isAdmin() && (
+                  <div className="mt-2">
+                    <span className="px-3 py-1 bg-primary/20 text-primary text-xs rounded-full font-medium">
+                      Administrator
+                    </span>
+                  </div>
+                )}
               </div>
               <Button
                 variant="outline"
@@ -106,7 +144,7 @@ export default function Profile() {
             Info Lainnya
           </h3>
 
-          <Card className="shadow-card border-0">
+          <Card className="shadow-card border border-border bg-card">
             <CardContent className="p-0">
               {menuItems.map((item, index) => {
                 const Icon = item.icon;
@@ -114,9 +152,9 @@ export default function Profile() {
                   <button
                     key={item.label}
                     onClick={item.action}
-                    className={`w-full flex items-center gap-4 p-4 text-left hover:bg-muted/30 transition-colors ${
+                    className={`w-full flex items-center gap-4 p-4 text-left hover:bg-muted/50 transition-all duration-200 ${
                       index !== menuItems.length - 1
-                        ? "border-b border-border"
+                        ? "border-b border-border/50"
                         : ""
                     }`}
                   >
@@ -133,12 +171,12 @@ export default function Profile() {
         </div>
 
         {/* Logout Button */}
-        <Card className="shadow-card border-0">
+        <Card className="shadow-card border border-border bg-card">
           <CardContent className="p-4">
             <Button
               onClick={handleLogout}
               variant="outline"
-              className="w-full h-12 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground font-semibold"
+              className="w-full h-12 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground font-semibold transition-all duration-200"
             >
               <LogOut className="w-5 h-5 mr-2" />
               Keluar dari Akun
@@ -153,15 +191,29 @@ export default function Profile() {
           </p>
         </div>
       </div>
-
-      {/* Edit Profile Modal */}
+      {/* Modals */}
       <EditProfileModal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
         profile={profile}
         onProfileUpdate={fetchProfile}
       />
-
+      <AboutModal
+        isOpen={showAboutModal}
+        onClose={() => setShowAboutModal(false)}
+      />
+      <TermsModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+      />
+      <PrivacyModal
+        isOpen={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
+      />
+      <AdminModal
+        isOpen={showAdminModal}
+        onClose={() => setShowAdminModal(false)}
+      />
       <BottomNav />
     </div>
   );

@@ -58,16 +58,16 @@ export default function Login() {
       <MobileHeader title="Masuk ke Akun" showTime={false} />
 
       <div className="p-4 pt-8">
-        <Card className="w-full max-w-md mx-auto shadow-card border-0">
+        <Card className="w-full max-w-md mx-auto shadow-card border-border bg-card">
           <CardHeader className="text-center pb-4">
             <div className="flex justify-center mb-4">
               <img
                 src="/logo-bnsp.png"
                 alt="BNSP Logo"
-                className="w-16 h-16 object-contain"
+                className="w-16 h-16 object-contain bg-white rounded-lg p-2"
               />
             </div>
-            <CardTitle className="text-xl font-bold text-foreground">
+            <CardTitle className="text-xl font-bold text-card-foreground">
               E-Presensi Anggota BNSP
             </CardTitle>
             <p className="text-sm text-muted-foreground">
@@ -78,7 +78,9 @@ export default function Login() {
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-card-foreground">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
@@ -86,12 +88,14 @@ export default function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Masukkan email"
                   required
-                  className="h-12"
+                  className="h-12 bg-input border-border text-foreground placeholder:text-muted-foreground"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="text-card-foreground">
+                  Password
+                </Label>
                 <Input
                   id="password"
                   type="password"
@@ -99,13 +103,13 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan password"
                   required
-                  className="h-12"
+                  className="h-12 bg-input border-border text-foreground placeholder:text-muted-foreground"
                 />
               </div>
 
               <Button
                 type="submit"
-                className="w-full h-12 font-semibold"
+                className="w-full h-12 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
                 disabled={loading}
               >
                 {loading ? (

@@ -1,0 +1,286 @@
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { X, Download, Users, Shield } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+
+interface AdminModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+interface UserData {
+  id: string;
+  email: string;
+  full_name: string;
+  position: string;
+  department: string;
+  employee_id: string;
+  role: string;
+  total_attendance: number;
+  last_attendance: string | null;
+}
+
+export function AdminModal({ isOpen, onClose }: AdminModalProps) {
+  const { toast } = useToast();
+  const [users, setUsers] = useState<UserData[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchUsersData();
+    }
+  }, [isOpen]);
+
+  const fetchUsersData = async () => {
+    try {
+      setLoading(true);
+
+      // Get all users with their profiles and roles
+      const { data: profiles, error: profilesError } = await supabase.from(
+        "profiles",
+      ).select(`
+          *,
+          user_roles!inner(role)
+        `);
+
+      if (profilesError) throw profilesError;
+
+      // Get attendance counts for each user
+      const usersWithStats = await Promise.all(
+        profiles.map(async (profile) => {
+          const { count } = await supabase
+            .from("attendance_records")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", profile.user_id);
+
+          const { data: lastAttendance } = await supabase
+            .from("attendance_records")
+            .select("date")
+            .eq("user_id", profile.user_id)
+            .order("date", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          return {
+            id: profile.id,
+            email: profile.user_id, // We'll get actual email from auth if needed
+            full_name: profile.full_name,
+            position: profile.position,
+            department: profile.department,
+            employee_id: profile.employee_id,
+            role: profile.user_roles?.role || "user",
+            total_attendance: count || 0,
+            last_attendance: lastAttendance?.date || null,
+          };
+        }),
+      );
+
+      setUsers(usersWithStats);
+    } catch (error) {
+      console.error("Error fetching users data:", error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat data pengguna",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadUserData = async () => {
+    try {
+      setDownloading(true);
+
+      // Get detailed attendance records for all users
+      const { data: attendanceRecords, error } = await supabase
+        .from("attendance_records")
+        .select(
+          `
+          *,
+          profiles!inner(full_name, position, department, employee_id)
+        `,
+        )
+        .order("date", { ascending: false });
+
+      if (error) throw error;
+
+      // Convert to CSV format
+      const csvHeaders = [
+        "Tanggal",
+        "Nama Lengkap",
+        "NIP",
+        "Jabatan",
+        "Unit Kerja",
+        "Jam Masuk",
+        "Jam Pulang",
+        "Tipe Kerja",
+        "Status",
+        "Laporan Kegiatan",
+      ];
+
+      const csvRows = attendanceRecords.map((record) => [
+        format(new Date(record.date), "dd/MM/yyyy"),
+        record.profiles.full_name,
+        record.profiles.employee_id,
+        record.profiles.position,
+        record.profiles.department,
+        record.clock_in_time
+          ? format(new Date(record.clock_in_time), "HH:mm")
+          : "-",
+        record.clock_out_time
+          ? format(new Date(record.clock_out_time), "HH:mm")
+          : "-",
+        record.work_type,
+        record.status,
+        record.daily_report || "-",
+      ]);
+
+      const csvContent = [csvHeaders, ...csvRows]
+        .map((row) => row.map((field) => `"${field}"`).join(","))
+        .join("\n");
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `rekap-presensi-${format(new Date(), "yyyy-MM-dd")}.csv`,
+      );
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "Berhasil",
+        description: "Data rekap presensi berhasil diunduh",
+      });
+    } catch (error) {
+      console.error("Error downloading data:", error);
+      toast({
+        title: "Error",
+        description: "Gagal mengunduh data",
+        variant: "destructive",
+      });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <Card className="w-full max-w-4xl h-[80vh] bg-card border-border">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle className="text-lg text-card-foreground flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" />
+            Panel Admin
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </CardHeader>
+
+        <CardContent className="flex-1 flex flex-col">
+          {/* Download Section */}
+          <div className="mb-6">
+            <Button
+              onClick={downloadUserData}
+              disabled={downloading}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {downloading ? "Mengunduh..." : "Unduh Rekap Semua User"}
+            </Button>
+          </div>
+
+          {/* Users List */}
+          <div className="flex-1">
+            <h3 className="font-semibold text-card-foreground mb-3 flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Daftar Pengguna ({users.length})
+            </h3>
+            <ScrollArea className="h-full">
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">
+                    Memuat data pengguna...
+                  </p>
+                </div>
+              ) : users.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">
+                    Tidak ada data pengguna
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {users.map((user) => (
+                    <div
+                      key={user.id}
+                      className="p-4 bg-muted/30 rounded-lg border border-border"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-card-foreground">
+                            {user.full_name}
+                          </h4>
+                          <p className="text-sm text-primary">
+                            {user.position}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {user.department} • NIP: {user.employee_id}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div
+                            className={`px-2 py-1 rounded-md text-xs font-medium ${
+                              user.role === "admin"
+                                ? "bg-primary/20 text-primary"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {user.role === "admin" ? "Admin" : "User"}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>Total Presensi: {user.total_attendance}</span>
+                        <span>
+                          Terakhir Hadir:{" "}
+                          {user.last_attendance
+                            ? format(
+                                new Date(user.last_attendance),
+                                "dd MMM yyyy",
+                                { locale: id },
+                              )
+                            : "Belum pernah"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

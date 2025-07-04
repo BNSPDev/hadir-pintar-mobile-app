@@ -1,27 +1,32 @@
-import { useState, useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { MobileHeader } from '@/components/MobileHeader';
-import { BottomNav } from '@/components/BottomNav';
-import { ClockOutModal } from '@/components/ClockOutModal';
-import { useAuth } from '@/hooks/useAuth';
-import { useProfile } from '@/hooks/useProfile';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { isWorkingHours, isLateArrival, getAttendanceMessage } from '@/utils/workHours';
-import { 
-  Building2, 
-  Car, 
-  Calendar, 
+import { useState, useEffect } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { MobileHeader } from "@/components/MobileHeader";
+import { BottomNav } from "@/components/BottomNav";
+import { ClockOutModal } from "@/components/ClockOutModal";
+import { ActivityReportModal } from "@/components/ActivityReportModal";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import {
+  isWorkingHours,
+  isLateArrival,
+  getAttendanceMessage,
+} from "@/utils/workHours";
+import {
+  Building2,
+  Car,
+  Calendar,
   Heart,
   CheckCircle,
   Clock,
-  ChevronRight
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+  ChevronRight,
+} from "lucide-react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 
 interface AttendanceRecord {
   id: string;
@@ -45,6 +50,7 @@ export default function Dashboard() {
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
   const [showWorkTypeSelector, setShowWorkTypeSelector] = useState(false);
   const [showClockOutModal, setShowClockOutModal] = useState(false);
+  const [showActivityModal, setShowActivityModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Update time every second
@@ -64,37 +70,35 @@ export default function Dashboard() {
 
   const fetchTodayAttendance = async () => {
     try {
-      const today = format(new Date(), 'yyyy-MM-dd');
+      const today = format(new Date(), "yyyy-MM-dd");
       const { data, error } = await supabase
-        .from('attendance_records')
-        .select('*')
-        .eq('user_id', user?.id)
-        .eq('date', today)
+        .from("attendance_records")
+        .select("*")
+        .eq("user_id", user?.id)
+        .eq("date", today)
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error && error.code !== "PGRST116") throw error;
       setTodayRecord(data);
     } catch (error) {
-      console.error('Error fetching attendance:', error);
+      console.error("Error fetching attendance:", error);
     }
   };
 
-  const handleClockIn = async (workType: 'WFO' | 'DL' | 'Cuti' | 'Sakit') => {
+  const handleClockIn = async (workType: "WFO" | "DL" | "Cuti" | "Sakit") => {
     setLoading(true);
     try {
-      const today = format(new Date(), 'yyyy-MM-dd');
+      const today = format(new Date(), "yyyy-MM-dd");
       const now = new Date();
       const nowISO = now.toISOString();
 
-      const { error } = await supabase
-        .from('attendance_records')
-        .insert({
-          user_id: user?.id,
-          date: today,
-          clock_in_time: nowISO,
-          work_type: workType,
-          status: 'active'
-        });
+      const { error } = await supabase.from("attendance_records").insert({
+        user_id: user?.id,
+        date: today,
+        clock_in_time: nowISO,
+        work_type: workType,
+        status: "active",
+      });
 
       if (error) throw error;
 
@@ -127,13 +131,13 @@ export default function Dashboard() {
       const nowISO = now.toISOString();
 
       const { error } = await supabase
-        .from('attendance_records')
+        .from("attendance_records")
         .update({
           clock_out_time: nowISO,
           daily_report: report,
-          status: 'completed'
+          status: "completed",
         })
-        .eq('id', todayRecord?.id);
+        .eq("id", todayRecord?.id);
 
       if (error) throw error;
 
@@ -173,38 +177,54 @@ export default function Dashboard() {
   }
 
   const workTypeOptions = [
-    { type: 'WFO' as const, label: 'WFO', icon: Building2, color: 'bg-attendance-wfo' },
-    { type: 'DL' as const, label: 'DL', icon: Car, color: 'bg-attendance-dl' },
-    { type: 'Cuti' as const, label: 'Cuti', icon: Calendar, color: 'bg-attendance-cuti' },
-    { type: 'Sakit' as const, label: 'Sakit', icon: Heart, color: 'bg-attendance-sakit' },
+    {
+      type: "WFO" as const,
+      label: "WFO",
+      icon: Building2,
+      color: "bg-attendance-wfo",
+    },
+    { type: "DL" as const, label: "DL", icon: Car, color: "bg-attendance-dl" },
+    {
+      type: "Cuti" as const,
+      label: "Cuti",
+      icon: Calendar,
+      color: "bg-attendance-cuti",
+    },
+    {
+      type: "Sakit" as const,
+      label: "Sakit",
+      icon: Heart,
+      color: "bg-attendance-sakit",
+    },
   ];
 
-  const indonesianDate = format(currentTime, 'EEEE, dd MMMM yyyy', { locale: id });
-  const timeString = format(currentTime, 'HH:mm:ss');
+  const indonesianDate = format(currentTime, "EEEE, dd MMMM yyyy", {
+    locale: id,
+  });
+  const timeString = format(currentTime, "HH:mm:ss");
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <MobileHeader title={profile?.full_name || 'User'} />
-      
-      <div className="p-4 space-y-6">
+    <div className="min-h-screen pb-24 bg-[#ffffff]">
+      <MobileHeader title={profile?.full_name || "User"} />
+      <div className="p-4 space-y-6 mt-2">
         {/* User Profile Card */}
-        <Card className="shadow-card border-0">
-          <CardContent className="p-4">
+        <Card className="shadow-card border border-border bg-card">
+          <CardContent className="p-5">
             <div className="flex items-center gap-4">
-              <Avatar className="w-16 h-16">
+              <Avatar className="w-16 h-16 ring-2 ring-primary/20">
                 <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
-                  {profile?.full_name?.charAt(0) || 'U'}
+                  {profile?.full_name?.charAt(0) || "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <h2 className="font-bold text-lg text-foreground">
-                  {profile?.full_name || 'Loading...'}
+                  {profile?.full_name || "Loading..."}
                 </h2>
                 <p className="text-sm font-medium text-primary">
-                  {profile?.position || 'STAFF'}
+                  {profile?.position || "STAFF"}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {profile?.department || 'Department'}
+                  {profile?.department || "Department"}
                 </p>
               </div>
             </div>
@@ -212,9 +232,11 @@ export default function Dashboard() {
         </Card>
 
         {/* Current Time */}
-        <Card className="shadow-card border-0">
-          <CardContent className="p-4 text-center">
-            <p className="text-sm text-muted-foreground mb-1">{indonesianDate}</p>
+        <Card className="shadow-card border border-border bg-gradient-to-br from-primary/5 to-primary/10">
+          <CardContent className="p-5 text-center">
+            <p className="text-sm text-muted-foreground mb-2">
+              {indonesianDate}
+            </p>
             <p className="text-3xl font-bold text-primary">{timeString}</p>
           </CardContent>
         </Card>
@@ -240,7 +262,7 @@ export default function Dashboard() {
               <div className="text-center">
                 <CheckCircle className="w-6 h-6 mx-auto mb-1" />
                 <div className="text-xs">
-                  {format(new Date(todayRecord.clock_in_time), 'HH:mm')}
+                  {format(new Date(todayRecord.clock_in_time), "HH:mm")}
                 </div>
               </div>
             </Button>
@@ -248,7 +270,9 @@ export default function Dashboard() {
 
           <Button
             onClick={() => setShowClockOutModal(true)}
-            disabled={!todayRecord?.clock_in_time || !!todayRecord?.clock_out_time}
+            disabled={
+              !todayRecord?.clock_in_time || !!todayRecord?.clock_out_time
+            }
             className="h-20 bg-warning hover:bg-warning/90 text-warning-foreground font-semibold text-lg disabled:opacity-50"
           >
             <div className="text-center">
@@ -262,7 +286,9 @@ export default function Dashboard() {
         {showWorkTypeSelector && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
-              <h3 className="font-bold text-lg mb-4 text-center">Pilih Tipe Kerja</h3>
+              <h3 className="font-bold text-lg mb-4 text-center">
+                Pilih Tipe Kerja
+              </h3>
               <div className="grid grid-cols-2 gap-3">
                 {workTypeOptions.map((option) => {
                   const Icon = option.icon;
@@ -294,43 +320,65 @@ export default function Dashboard() {
         )}
 
         {/* Today's Activity Report */}
-        <Card className="shadow-card border-0">
-          <CardContent className="p-4">
+        <Card
+          className="shadow-card border border-border bg-card cursor-pointer hover:bg-muted/30 transition-all duration-200 hover:shadow-lg"
+          onClick={() => setShowActivityModal(true)}
+        >
+          <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-foreground">Laporkan Kegiatan Hari Ini</h3>
+                <h3 className="font-semibold text-foreground">
+                  Laporkan Kegiatan Hari Ini
+                </h3>
                 <p className="text-sm text-muted-foreground">
                   Jangan lupa untuk selalu melaporkan pekerjaanmu setiap harian.
                 </p>
               </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              <ChevronRight className="w-5 h-5 text-primary" />
             </div>
           </CardContent>
         </Card>
 
         {/* Attendance Summary */}
-        <Card className="shadow-card border-0">
-          <CardContent className="p-4">
+        <Card className="shadow-card border border-border bg-card">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-foreground">Rekap Presensi</h3>
-              <Button variant="link" className="text-primary p-0 h-auto" onClick={() => navigate('/attendance-history')}>
+              <Button
+                variant="link"
+                className="text-primary p-0 h-auto hover:text-primary/80"
+                onClick={() => navigate("/attendance-history")}
+              >
                 Lihat Semua
               </Button>
             </div>
-            
+
             <div className="space-y-3">
               {todayRecord ? (
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border/50">
                   <div>
                     <p className="font-medium text-foreground">
-                      {format(new Date(), 'EEEE, dd MMM yyyy', { locale: id })}
+                      {format(new Date(), "EEEE, dd MMM yyyy", { locale: id })}
                     </p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>Jam Masuk: {todayRecord.clock_in_time ? format(new Date(todayRecord.clock_in_time), 'HH:mm') : '-'}</span>
-                      <span>Jam Pulang: {todayRecord.clock_out_time ? format(new Date(todayRecord.clock_out_time), 'HH:mm') : '-'}</span>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                      <span>
+                        Jam Masuk:{" "}
+                        {todayRecord.clock_in_time
+                          ? format(new Date(todayRecord.clock_in_time), "HH:mm")
+                          : "-"}
+                      </span>
+                      <span>
+                        Jam Pulang:{" "}
+                        {todayRecord.clock_out_time
+                          ? format(
+                              new Date(todayRecord.clock_out_time),
+                              "HH:mm",
+                            )
+                          : "-"}
+                      </span>
                     </div>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <ChevronRight className="w-5 h-5 text-primary" />
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
@@ -341,15 +389,19 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Clock Out Modal */}
+        {/* Modals */}
         <ClockOutModal
           isOpen={showClockOutModal}
           onClose={() => setShowClockOutModal(false)}
           onSubmit={handleClockOut}
           loading={loading}
         />
-      </div>
 
+        <ActivityReportModal
+          isOpen={showActivityModal}
+          onClose={() => setShowActivityModal(false)}
+        />
+      </div>
       <BottomNav />
     </div>
   );
