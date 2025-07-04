@@ -1,0 +1,61 @@
+{
+  "name": "E-Presensi Anggota BNSP",
+  "short_name": "E-Presensi",
+  "description": "Aplikasi absensi mobile resmi untuk anggota Badan Nasional Sertifikasi Profesi (BNSP)",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1f1f1f",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "id",
+  "categories": ["productivity", "business"],
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Absen Masuk",
+      "short_name": "Masuk",
+      "description": "Langsung absen masuk",
+      "url": "/?action=checkin",
+      "icons": [
+        {
+          "src": "/favicon.png",
+          "sizes": "32x32"
+        }
+      ]
+    },
+    {
+      "name": "Rekap Presensi",
+      "short_name": "Rekap",
+      "description": "Lihat rekap presensi",
+      "url": "/attendance-history",
+      "icons": [
+        {
+          "src": "/favicon.png",
+          "sizes": "32x32"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
