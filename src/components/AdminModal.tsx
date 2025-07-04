@@ -98,20 +98,44 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     try {
       setDownloading(true);
 
-      // Get detailed attendance records for all users
+      // Get detailed attendance records for all users with better error handling
       const { data: attendanceRecords, error } = await supabase
         .from("attendance_records")
         .select(
           `
-          *,
-          profiles!inner(full_name, position, department, employee_id)
+          id,
+          date,
+          clock_in_time,
+          clock_out_time,
+          work_type,
+          status,
+          daily_report,
+          user_id,
+          profiles!inner(
+            full_name,
+            position,
+            department,
+            employee_id
+          )
         `,
         )
         .order("date", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error:", error);
+        throw new Error(`Database error: ${error.message}`);
+      }
 
-      // Convert to CSV format
+      if (!attendanceRecords || attendanceRecords.length === 0) {
+        toast({
+          title: "Informasi",
+          description: "Tidak ada data presensi untuk diunduh",
+          variant: "default",
+        });
+        return;
+      }
+
+      // Convert to CSV format with proper escaping
       const csvHeaders = [
         "Tanggal",
         "Nama Lengkap",
@@ -125,50 +149,67 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         "Laporan Kegiatan",
       ];
 
-      const csvRows = attendanceRecords.map((record) => [
-        format(new Date(record.date), "dd/MM/yyyy"),
-        record.profiles.full_name,
-        record.profiles.employee_id,
-        record.profiles.position,
-        record.profiles.department,
-        record.clock_in_time
-          ? format(new Date(record.clock_in_time), "HH:mm")
-          : "-",
-        record.clock_out_time
-          ? format(new Date(record.clock_out_time), "HH:mm")
-          : "-",
-        record.work_type,
-        record.status,
-        record.daily_report || "-",
-      ]);
+      const csvRows = attendanceRecords.map((record) => {
+        // Safe date parsing
+        const recordDate = record.date ? new Date(record.date) : null;
+        const clockInTime = record.clock_in_time
+          ? new Date(record.clock_in_time)
+          : null;
+        const clockOutTime = record.clock_out_time
+          ? new Date(record.clock_out_time)
+          : null;
 
-      const csvContent = [csvHeaders, ...csvRows]
-        .map((row) => row.map((field) => `"${field}"`).join(","))
-        .join("\n");
+        return [
+          recordDate ? format(recordDate, "dd/MM/yyyy") : "-",
+          record.profiles?.full_name || "-",
+          record.profiles?.employee_id || "-",
+          record.profiles?.position || "-",
+          record.profiles?.department || "-",
+          clockInTime ? format(clockInTime, "HH:mm") : "-",
+          clockOutTime ? format(clockOutTime, "HH:mm") : "-",
+          record.work_type || "-",
+          record.status || "-",
+          (record.daily_report || "-").replace(/"/g, '""'), // Escape quotes in CSV
+        ];
+      });
+
+      // Create CSV content with BOM for proper Excel encoding
+      const csvContent =
+        "\uFEFF" +
+        [csvHeaders, ...csvRows]
+          .map((row) => row.map((field) => `"${field}"`).join(","))
+          .join("\r\n");
 
       // Create and download file
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const blob = new Blob([csvContent], {
+        type: "text/csv;charset=utf-8;",
+      });
+
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
       link.setAttribute(
         "download",
-        `rekap-presensi-${format(new Date(), "yyyy-MM-dd")}.csv`,
+        `rekap-presensi-bnsp-${format(new Date(), "yyyy-MM-dd")}.csv`,
       );
       link.style.visibility = "hidden";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
+      // Clean up the URL object
+      URL.revokeObjectURL(url);
+
       toast({
         title: "Berhasil",
-        description: "Data rekap presensi berhasil diunduh",
+        description: `Data rekap presensi (${attendanceRecords.length} record) berhasil diunduh`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error downloading data:", error);
       toast({
         title: "Error",
-        description: "Gagal mengunduh data",
+        description:
+          error.message || "Gagal mengunduh data. Silakan coba lagi.",
         variant: "destructive",
       });
     } finally {
