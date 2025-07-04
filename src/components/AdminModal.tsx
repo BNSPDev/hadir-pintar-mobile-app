@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { X, Download, Users, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -334,12 +335,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
             </h3>
             <ScrollArea className="h-full">
               {loading ? (
-                <div className="text-center py-8">
-                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">
-                    Memuat data pengguna...
-                  </p>
-                </div>
+                <LoadingSpinner message="Memuat data pengguna..." />
               ) : users.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">
