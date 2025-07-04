@@ -17,14 +17,32 @@ export function useProfile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     if (user?.id) {
       fetchProfile();
+      // Set a timeout to prevent infinite loading
+      timeoutId = setTimeout(() => {
+        console.warn("Profile fetch timeout, setting fallback profile");
+        setProfile({
+          id: "timeout",
+          user_id: user.id,
+          full_name: "Timeout Loading",
+          position: "Staff",
+          department: "Umum",
+          employee_id: "N/A",
+        });
+        setLoading(false);
+      }, 10000); // 10 second timeout
     } else if (user === null) {
       // User is explicitly null (not authenticated)
       setProfile(null);
       setLoading(false);
     }
-    // If user is undefined, keep loading (auth state not yet determined)
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [user]);
 
   const fetchProfile = async () => {

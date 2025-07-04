@@ -16,14 +16,31 @@ export function useUserRole() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     if (user?.id) {
       fetchUserRole();
+      // Set a timeout to prevent infinite loading
+      timeoutId = setTimeout(() => {
+        console.warn("Role fetch timeout, setting default role");
+        setUserRole({
+          id: "timeout",
+          user_id: user.id,
+          role: "user",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        setLoading(false);
+      }, 8000); // 8 second timeout
     } else if (user === null) {
       // User is explicitly null (not authenticated)
       setUserRole(null);
       setLoading(false);
     }
-    // If user is undefined, keep loading (auth state not yet determined)
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [user]);
 
   const fetchUserRole = async () => {
