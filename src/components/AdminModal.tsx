@@ -63,18 +63,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
 
       console.log(`Found ${profiles?.length || 0} profiles in database`);
 
-      // Auto-assign roles to users who don't have them
-      const roleAssignmentResult = await assignRolesToAllUsers();
-      console.log("Role assignment result:", roleAssignmentResult);
-
-      if (roleAssignmentResult.success && roleAssignmentResult.assigned > 0) {
-        toast({
-          title: "Roles Assigned",
-          description: `Assigned "user" role to ${roleAssignmentResult.assigned} users`,
-        });
-      }
-
-      // Get all user roles separately (after potential role assignment)
+      // Get all user roles separately
       const { data: userRoles, error: rolesError } = await supabase
         .from("user_roles")
         .select("user_id, role");
