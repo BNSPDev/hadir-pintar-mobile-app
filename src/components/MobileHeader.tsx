@@ -13,31 +13,45 @@ export function MobileHeader({ title, showTime = true }: MobileHeaderProps) {
   });
 
   return (
-    <div className="bg-primary text-primary-foreground p-4 rounded-b-3xl shadow-card text-mobile-header-foreground p-6 shadow-header border-b border-orange-200/30 bg-[#1a1919]">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-3">
-          <img
-            src="/logo-bnsp.png"
-            alt="BNSP Logo"
-            className="w-10 h-10 object-contain bg-white rounded-lg p-1"
-          />
-          <div>
-            <span className="text-xs font-medium opacity-90 block text-white/90 leading-tight size-1.5">
-              BADAN NASIONAL SERTIFIKASI PROFESI
-            </span>
+    <div className="bg-gradient-to-br from-primary to-primary-light text-primary-foreground p-6 rounded-b-[2rem] shadow-header relative overflow-hidden">
+      {/* Subtle geometric pattern overlay inspired by BNSP logo */}
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-accent/5 to-secondary/10 pointer-events-none" />
+
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/95 backdrop-blur-sm rounded-xl p-2 shadow-soft">
+              <img
+                src="https://cdn.builder.io/api/v1/image/assets%2Fda75669088f743d3b0d001a5b0efe69b%2F0b024383d832423f81e5d60abdb3f7b0?format=webp&width=800"
+                alt="BNSP Logo"
+                className="w-8 h-8 object-contain"
+              />
+            </div>
+            <div>
+              <span className="text-xs font-semibold opacity-90 block text-primary-foreground/90 leading-tight tracking-wide">
+                BADAN NASIONAL SERTIFIKASI PROFESI
+              </span>
+              <span className="text-xs font-bold text-accent block mt-0.5 tracking-wider">
+                E-PRESENSI ANGGOTA
+              </span>
+            </div>
           </div>
+          {showTime && (
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
+              <Clock className="w-4 h-4 text-accent" />
+              <span className="text-sm font-bold text-primary-foreground">
+                {timeString}
+              </span>
+            </div>
+          )}
         </div>
-        {showTime && (
-          <div className="flex items-center gap-1 text-right">
-            <Clock className="w-4 h-4" />
-            <span className="text-sm font-bold">{timeString}</span>
-          </div>
-        )}
+
+        <div className="border-l-4 border-accent pl-4">
+          <h1 className="text-xl font-bold text-primary-foreground leading-tight">
+            {title}
+          </h1>
+        </div>
       </div>
-      <span className="text-xs font-bold opacity-100 block">
-        E-PRESENSI ANGGOTA BNSP
-      </span>
-      <h1 className="text-lg font-bold">{title}</h1>
     </div>
   );
 }
