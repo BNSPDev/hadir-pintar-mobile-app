@@ -134,10 +134,13 @@ export default function Login() {
               </Button>
             </form>
 
-            <div className="mt-4 text-center">
-              <p className="text-sm text-muted-foreground">
-                Demo: gunakan email dan password apapun untuk login
-              </p>
+            <div className="mt-6 text-center">
+              <div className="bg-accent/10 border border-accent/20 rounded-lg p-3">
+                <p className="text-sm text-muted-foreground font-medium">
+                  <span className="text-accent font-semibold">Demo:</span>{" "}
+                  gunakan email dan password apapun untuk login
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
