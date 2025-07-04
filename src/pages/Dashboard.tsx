@@ -292,24 +292,24 @@ export default function Dashboard() {
 
         {/* Work Type Selector Modal */}
         {showWorkTypeSelector && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
-              <h3 className="font-bold text-lg mb-4 text-center">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-white/20">
+              <h3 className="font-bold text-xl mb-6 text-center text-foreground">
                 Pilih Tipe Kerja
               </h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 {workTypeOptions.map((option) => {
                   const Icon = option.icon;
                   return (
                     <Button
                       key={option.type}
                       onClick={() => handleClockIn(option.type)}
-                      className={`h-20 ${option.color} hover:opacity-90 text-white font-semibold`}
+                      className={`h-24 ${option.color} hover:scale-[1.05] hover:shadow-lg text-white font-bold transition-all duration-200 border border-white/20`}
                       disabled={loading}
                     >
                       <div className="text-center">
-                        <Icon className="w-6 h-6 mx-auto mb-2" />
-                        {option.label}
+                        <Icon className="w-7 h-7 mx-auto mb-2" />
+                        <span className="text-base">{option.label}</span>
                       </div>
                     </Button>
                   );
@@ -318,7 +318,7 @@ export default function Dashboard() {
               <Button
                 variant="outline"
                 onClick={() => setShowWorkTypeSelector(false)}
-                className="w-full mt-4"
+                className="w-full mt-6 h-12 font-semibold border-2 hover:bg-muted"
                 disabled={loading}
               >
                 Batal
