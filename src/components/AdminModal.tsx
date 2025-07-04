@@ -42,6 +42,10 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     try {
       setLoading(true);
 
+      // Get all authenticated users first from auth.users (this requires admin access)
+      // Since we can't directly access auth.users, we'll get all profiles
+      // and also check for users with attendance records but no profiles
+
       // Get all profiles first
       const { data: profiles, error: profilesError } = await supabase.from(
         "profiles",
@@ -69,12 +73,50 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         // Continue without roles data if this fails
       }
 
+      // Get all unique user_ids from attendance records to catch any users without profiles
+      const { data: attendanceUsers, error: attendanceError } = await supabase
+        .from("attendance_records")
+        .select("user_id")
+        .group("user_id");
+
+      if (attendanceError) {
+        console.warn("Attendance users error:", attendanceError);
+      }
+
+      // Create a set of user_ids from profiles
+      const profileUserIds = new Set(profiles?.map((p) => p.user_id) || []);
+
+      // Find user_ids that have attendance but no profile
+      const missingProfileUsers =
+        attendanceUsers?.filter((au) => !profileUserIds.has(au.user_id)) || [];
+
+      // Log missing profiles for debugging
+      if (missingProfileUsers.length > 0) {
+        console.log(
+          `Found ${missingProfileUsers.length} users with attendance but no profile:`,
+          missingProfileUsers.map((u) => u.user_id),
+        );
+      }
+
       // Create a map of user roles for quick lookup
       const rolesMap = new Map(
         userRoles?.map((role) => [role.user_id, role.role]) || [],
       );
 
-      if (!profiles || profiles.length === 0) {
+      // Combine profiles with any missing users
+      const allProfiles = [
+        ...(profiles || []),
+        ...missingProfileUsers.map((mu) => ({
+          id: `missing-${mu.user_id}`,
+          user_id: mu.user_id,
+          full_name: "Profil Tidak Lengkap",
+          position: "Tidak Diketahui",
+          department: "Tidak Diketahui",
+          employee_id: "Belum Diisi",
+        })),
+      ];
+
+      if (!allProfiles || allProfiles.length === 0) {
         toast({
           title: "Informasi",
           description: "Tidak ada data pengguna ditemukan",
@@ -85,7 +127,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
 
       // Get attendance counts for each user with better error handling
       const usersWithStats = await Promise.all(
-        profiles.map(async (profile) => {
+        allProfiles.map(async (profile) => {
           try {
             // Get attendance count
             const { count, error: countError } = await supabase
