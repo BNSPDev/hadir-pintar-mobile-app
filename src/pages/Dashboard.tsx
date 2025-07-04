@@ -208,22 +208,25 @@ export default function Dashboard() {
       <MobileHeader title={profile?.full_name || "User"} />
       <div className="p-4 space-y-6 mt-2">
         {/* User Profile Card */}
-        <Card className="shadow-card border border-border bg-card">
-          <CardContent className="p-5">
+        <Card className="shadow-card border border-border bg-gradient-card backdrop-blur-sm">
+          <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <Avatar className="w-16 h-16 ring-2 ring-primary/20">
-                <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
-                  {profile?.full_name?.charAt(0) || "U"}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="w-16 h-16 ring-2 ring-accent/30 shadow-soft">
+                  <AvatarFallback className="bg-gradient-primary text-primary-foreground text-lg font-bold">
+                    {profile?.full_name?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-success rounded-full border-2 border-white"></div>
+              </div>
               <div className="flex-1">
-                <h2 className="font-bold text-lg text-foreground">
+                <h2 className="font-bold text-xl text-foreground">
                   {profile?.full_name || "Loading..."}
                 </h2>
-                <p className="text-sm font-medium text-primary">
+                <p className="text-sm font-semibold text-secondary">
                   {profile?.position || "STAFF"}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground font-medium">
                   {profile?.department || "Department"}
                 </p>
               </div>
