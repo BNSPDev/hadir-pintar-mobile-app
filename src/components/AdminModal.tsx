@@ -430,6 +430,38 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     }
   };
 
+  const handleAssignRoles = async () => {
+    try {
+      setAssigningRoles(true);
+
+      const result = await assignRolesToAllUsers();
+
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: result.message,
+        });
+
+        // Refresh user list
+        await fetchUsersData();
+      } else {
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to assign roles",
+        variant: "destructive",
+      });
+    } finally {
+      setAssigningRoles(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -451,29 +483,43 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         </CardHeader>
 
         <CardContent className="flex-1 flex flex-col">
-          {/* Download Section */}
+          {/* Admin Actions */}
           <div className="mb-6 p-4 bg-muted/30 rounded-lg border border-border">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h3 className="font-semibold text-card-foreground">
-                  Download Rekap Presensi
+                  Admin Actions
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Unduh data rekap presensi semua anggota dalam format CSV
+                  Download data dan kelola peran pengguna
                 </p>
               </div>
             </div>
-            <Button
-              onClick={downloadUserData}
-              disabled={downloading || users.length === 0}
-              className="bg-gradient-secondary hover:shadow-lg hover:scale-[1.02] text-white transition-all duration-200"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              {downloading ? "Mengunduh..." : `Unduh Rekap (${users.length})`}
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                onClick={downloadUserData}
+                disabled={downloading || users.length === 0}
+                className="bg-gradient-secondary hover:shadow-lg hover:scale-[1.02] text-white transition-all duration-200"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {downloading
+                  ? "Mengunduh..."
+                  : `Download Excel (${users.length})`}
+              </Button>
+              <Button
+                onClick={handleAssignRoles}
+                disabled={assigningRoles}
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary hover:text-white"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                {assigningRoles ? "Assigning..." : "Assign User Roles"}
+              </Button>
+            </div>
             {users.length === 0 && (
               <p className="text-xs text-muted-foreground mt-2">
-                Tidak ada data untuk diunduh
+                Tidak ada data untuk diunduh. Coba "Assign User Roles" untuk
+                memperbaiki data user.
               </p>
             )}
           </div>
