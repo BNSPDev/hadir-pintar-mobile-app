@@ -120,7 +120,8 @@ export default function Login() {
 
               <Button
                 type="submit"
-                className="w-full h-12 font-semibold bg-gradient-primary hover:shadow-lg hover:scale-[1.02] text-primary-foreground transition-all duration-200 border border-primary/20"
+                className="w-full h-12 font-semibold bg-gradient-primary hover:scale-[1.02] text-primary-foreground transition-all duration-200 border border-primary/20"
+                style={{ textShadow: "1px 1px 3px rgba(0, 0, 0, 1)" }}
                 disabled={loading}
               >
                 {loading ? (
@@ -133,15 +134,6 @@ export default function Login() {
                 )}
               </Button>
             </form>
-
-            <div className="mt-6 text-center">
-              <div className="bg-accent/10 border border-accent/20 rounded-lg p-3">
-                <p className="text-sm text-muted-foreground font-medium">
-                  <span className="text-accent font-semibold">Demo:</span>{" "}
-                  gunakan email dan password apapun untuk login
-                </p>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>
