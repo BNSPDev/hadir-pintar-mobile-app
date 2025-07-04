@@ -42,7 +42,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     try {
       setLoading(true);
 
-      // Get all users with their profiles and roles using left join to include users without roles
+      // Get all profiles first
       const { data: profiles, error: profilesError } = await supabase.from(
         "profiles",
       ).select(`
@@ -51,14 +51,28 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
           full_name,
           position,
           department,
-          employee_id,
-          user_roles(role)
+          employee_id
         `);
 
       if (profilesError) {
         console.error("Profiles error:", profilesError);
         throw new Error(`Failed to fetch profiles: ${profilesError.message}`);
       }
+
+      // Get all user roles separately
+      const { data: userRoles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("user_id, role");
+
+      if (rolesError) {
+        console.warn("User roles error:", rolesError);
+        // Continue without roles data if this fails
+      }
+
+      // Create a map of user roles for quick lookup
+      const rolesMap = new Map(
+        userRoles?.map((role) => [role.user_id, role.role]) || [],
+      );
 
       if (!profiles || profiles.length === 0) {
         toast({
@@ -109,7 +123,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
               position: profile.position || "Jabatan tidak tersedia",
               department: profile.department || "Unit kerja tidak tersedia",
               employee_id: profile.employee_id || "NIP tidak tersedia",
-              role: profile.user_roles?.role || "user",
+              role: rolesMap.get(profile.user_id) || "user",
               total_attendance: count || 0,
               last_attendance: lastAttendance?.date || null,
             };
@@ -126,7 +140,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
               position: profile.position || "Jabatan tidak tersedia",
               department: profile.department || "Unit kerja tidak tersedia",
               employee_id: profile.employee_id || "NIP tidak tersedia",
-              role: profile.user_roles?.role || "user",
+              role: rolesMap.get(profile.user_id) || "user",
               total_attendance: 0,
               last_attendance: null,
             };
