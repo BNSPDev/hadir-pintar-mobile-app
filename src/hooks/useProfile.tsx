@@ -15,39 +15,24 @@ export function useProfile() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
     if (user?.id) {
       fetchProfile();
-      // Set a timeout to prevent infinite loading - reduced to 5 seconds
-      timeoutId = setTimeout(() => {
-        console.warn("Profile fetch timeout, setting fallback profile");
-        setProfile({
-          id: "timeout",
-          user_id: user.id,
-          full_name: "Timeout Loading",
-          position: "Staff",
-          department: "Umum",
-          employee_id: "N/A",
-        });
-        setLoading(false);
-      }, 5000); // Reduced timeout to 5 seconds
     } else if (user === null) {
       // User is explicitly null (not authenticated)
       setProfile(null);
       setLoading(false);
     }
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
   }, [user]);
 
   const fetchProfile = async () => {
+    setError(null);
     if (!user?.id) {
-      console.log("No user ID available for profile fetch");
+      const noUserMsg = "No user ID available for profile fetch";
+      console.log(noUserMsg);
+      setError(noUserMsg);
       setLoading(false);
       return;
     }
@@ -63,6 +48,7 @@ export function useProfile() {
 
       if (error && error.code !== "PGRST116") {
         console.error("Profile fetch error:", error);
+        setError(error.message || "Profile fetch error");
         // Set fallback profile on error
         setProfile({
           id: "error",
@@ -80,7 +66,9 @@ export function useProfile() {
         console.log("Profile found:", data);
         setProfile(data);
       } else {
-        console.log("No profile found for user:", user.id);
+        const notFoundMsg = "No profile found for user: " + user.id;
+        console.log(notFoundMsg);
+        setError(notFoundMsg);
         // Create a basic profile for users without one
         setProfile({
           id: "missing",
@@ -91,8 +79,9 @@ export function useProfile() {
           employee_id: "N/A",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching profile:", error);
+      setError(error.message || "Unknown error fetching profile");
       // Set a minimal profile to prevent infinite loading
       setProfile({
         id: "temp",
@@ -107,5 +96,5 @@ export function useProfile() {
     }
   };
 
-  return { profile, loading, fetchProfile };
+  return { profile, loading, error, fetchProfile };
 }

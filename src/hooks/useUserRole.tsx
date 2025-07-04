@@ -14,38 +14,24 @@ export function useUserRole() {
   const { user } = useAuth();
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
     if (user?.id) {
       fetchUserRole();
-      // Set a timeout to prevent infinite loading - reduced to 3 seconds
-      timeoutId = setTimeout(() => {
-        console.warn("Role fetch timeout, setting default role");
-        setUserRole({
-          id: "timeout",
-          user_id: user.id,
-          role: "user",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        setLoading(false);
-      }, 3000); // 3 second timeout
     } else if (user === null) {
       // User is explicitly null (not authenticated)
       setUserRole(null);
       setLoading(false);
     }
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
   }, [user]);
 
   const fetchUserRole = async () => {
+    setError(null);
     if (!user?.id) {
-      console.log("No user ID available for role fetch");
+      const noUserMsg = "No user ID available for role fetch";
+      console.log(noUserMsg);
+      setError(noUserMsg);
       setLoading(false);
       return;
     }
@@ -61,6 +47,7 @@ export function useUserRole() {
 
       if (error && error.code !== "PGRST116") {
         console.error("Role fetch error:", error);
+        setError(error.message || "Role fetch error");
         // Set default role on error and finish loading
         setUserRole({
           id: "error",
@@ -77,7 +64,9 @@ export function useUserRole() {
         console.log("Role found:", data);
         setUserRole(data);
       } else {
-        console.log("No role found for user:", user.id);
+        const notFoundMsg = "No role found for user: " + user.id;
+        console.log(notFoundMsg);
+        setError(notFoundMsg);
         // Set default role instead of trying to create one
         setUserRole({
           id: "default",
@@ -88,8 +77,9 @@ export function useUserRole() {
         });
       }
       setLoading(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching user role:", error);
+      setError(error.message || "Unknown error fetching user role");
       // Set a default role to prevent infinite loading
       setUserRole({
         id: "temp",
@@ -123,5 +113,5 @@ export function useUserRole() {
     }
   };
 
-  return { userRole, loading, isAdmin, updateRole, fetchUserRole };
+  return { userRole, loading, error, isAdmin, updateRole, fetchUserRole };
 }

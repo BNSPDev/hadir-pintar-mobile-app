@@ -27,9 +27,10 @@ import {
 } from "lucide-react";
 
 export default function Profile() {
+  // All hooks must be called at the top level, before any return/conditional
   const { user, signOut, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading, fetchProfile } = useProfile();
-  const { userRole, loading: roleLoading, isAdmin, updateRole } = useUserRole();
+  const { profile, loading: profileLoading, error: profileError, fetchProfile } = useProfile();
+  const { userRole, loading: roleLoading, error: roleError, isAdmin, updateRole, fetchUserRole } = useUserRole();
   const { toast } = useToast();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
@@ -37,12 +38,64 @@ export default function Profile() {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
 
-  if (authLoading || profileLoading || roleLoading) {
-    return <LoadingSpinner fullScreen message="Memuat profil..." />;
+  // All hooks are above this line. Now safe to use returns/conditionals.
+
+  // Tampilkan loading spinner jika masih loading
+  if (authLoading) {
+    return <LoadingSpinner fullScreen message="Memeriksa autentikasi..." />;
   }
 
+  // Redirect ke halaman login jika tidak ada user
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Tampilkan loading spinner saat memuat data profil/role
+  if (profileLoading || roleLoading) {
+    return <LoadingSpinner fullScreen message="Memuat data profil..." />;
+  }
+
+  // Tampilkan pesan error jika ada masalah
+  if (profileError || roleError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 max-w-md w-full text-center">
+          <h2 className="font-bold text-xl text-destructive mb-4">Gagal Memuat Data</h2>
+          {profileError && (
+            <div className="mb-3 p-3 bg-red-50 text-red-700 rounded-md">
+              <p className="font-medium">Gagal memuat profil:</p>
+              <p className="text-sm">{profileError}</p>
+            </div>
+          )}
+          {roleError && (
+            <div className="mb-4 p-3 bg-yellow-50 text-yellow-700 rounded-md">
+              <p className="font-medium">Gagal memuat peran pengguna:</p>
+              <p className="text-sm">{roleError}</p>
+            </div>
+          )}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+            {profileError && (
+              <Button 
+                onClick={fetchProfile} 
+                variant="outline" 
+                className="w-full sm:w-auto"
+              >
+                Muat Ulang Profil
+              </Button>
+            )}
+            {roleError && (
+              <Button 
+                onClick={fetchUserRole} 
+                variant="default" 
+                className="w-full sm:w-auto"
+              >
+                Muat Ulang Peran
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const handleLogout = async () => {

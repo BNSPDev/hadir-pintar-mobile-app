@@ -12,7 +12,7 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import AttendanceHistory from "./pages/AttendanceHistory";
 import NotFound from "./pages/NotFound";
-import routes from "tempo-routes";
+import routes from "./tempo-routes";
 
 // Configure React Query with better defaults for production
 const queryClient = new QueryClient({

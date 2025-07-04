@@ -26,3 +26,8 @@ dist-ssr
 # Tempo
 **/tempobook/dynamic/
 **/tempobook/storyboards/
+
+# Environment variables
+.env
+.env.*
+!.env.example
