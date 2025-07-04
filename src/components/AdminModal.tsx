@@ -320,11 +320,11 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         ];
       });
 
-      // Create CSV content with BOM for proper Excel encoding
+      // Create CSV content with BOM for proper Excel encoding (Indonesian format uses semicolon)
       const csvContent =
         "\uFEFF" +
         [csvHeaders, ...csvRows]
-          .map((row) => row.map((field) => `"${field}"`).join(","))
+          .map((row) => row.map((field) => `"${field}"`).join(";"))
           .join("\r\n");
 
       // Create and download file
