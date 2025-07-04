@@ -71,24 +71,42 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         // Continue without roles data if this fails
       }
 
+      console.log(`Found ${userRoles?.length || 0} user roles in database`);
+
       // Create a map of user roles for quick lookup
       const rolesMap = new Map(
         userRoles?.map((role) => [role.user_id, role.role]) || [],
       );
 
       if (!profiles || profiles.length === 0) {
+        console.error("No profiles found in database!");
         toast({
-          title: "Informasi",
-          description: "Tidak ada data pengguna ditemukan",
+          title: "Error",
+          description:
+            "Tidak ada profil pengguna ditemukan di database. Pastikan data sudah ada.",
+          variant: "destructive",
         });
         setUsers([]);
         return;
       }
 
+      console.log(
+        "Processing users with profiles:",
+        profiles.map((p) => ({
+          id: p.id,
+          user_id: p.user_id,
+          full_name: p.full_name,
+        })),
+      );
+
       // Get attendance counts for each user
       const usersWithStats = await Promise.all(
         profiles.map(async (profile) => {
           try {
+            console.log(
+              `Processing user: ${profile.full_name} (${profile.user_id})`,
+            );
+
             // Get attendance count
             const { count, error: countError } = await supabase
               .from("attendance_records")
@@ -118,7 +136,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
               );
             }
 
-            return {
+            const userData = {
               id: profile.id,
               email: profile.user_id,
               full_name: profile.full_name || "Nama tidak tersedia",
@@ -129,6 +147,9 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
               total_attendance: count || 0,
               last_attendance: lastAttendance?.date || null,
             };
+
+            console.log(`User processed:`, userData);
+            return userData;
           } catch (userError) {
             console.error(
               `Error processing user ${profile.user_id}:`,
@@ -150,11 +171,12 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         }),
       );
 
+      console.log(`Final user list:`, usersWithStats);
       setUsers(usersWithStats);
 
       toast({
         title: "Berhasil",
-        description: `Data ${usersWithStats.length} pengguna berhasil dimuat`,
+        description: `Data ${usersWithStats.length} pengguna berhasil dimuat dari database`,
       });
     } catch (error: any) {
       console.error("Error fetching users data:", error);
