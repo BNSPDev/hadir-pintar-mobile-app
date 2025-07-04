@@ -254,22 +254,22 @@ export default function Dashboard() {
           {!todayRecord?.clock_in_time ? (
             <Button
               onClick={() => setShowWorkTypeSelector(true)}
-              className="h-20 bg-attendance-wfo hover:bg-attendance-wfo/90 text-white font-semibold text-lg"
+              className="h-24 bg-gradient-secondary hover:shadow-card hover:scale-[1.02] text-white font-bold text-lg border border-secondary/20 shadow-soft"
               disabled={loading}
             >
               <div className="text-center">
-                <Clock className="w-6 h-6 mx-auto mb-1" />
-                Masuk
+                <Clock className="w-7 h-7 mx-auto mb-2" />
+                <span className="text-base">Masuk</span>
               </div>
             </Button>
           ) : (
             <Button
               disabled
-              className="h-20 bg-success text-success-foreground font-semibold text-lg"
+              className="h-24 bg-gradient-to-br from-success to-success/80 text-success-foreground font-bold text-lg shadow-soft border border-success/20"
             >
               <div className="text-center">
-                <CheckCircle className="w-6 h-6 mx-auto mb-1" />
-                <div className="text-xs">
+                <CheckCircle className="w-7 h-7 mx-auto mb-2" />
+                <div className="text-xs font-semibold">
                   {format(new Date(todayRecord.clock_in_time), "HH:mm")}
                 </div>
               </div>
@@ -281,11 +281,11 @@ export default function Dashboard() {
             disabled={
               !todayRecord?.clock_in_time || !!todayRecord?.clock_out_time
             }
-            className="h-20 bg-warning hover:bg-warning/90 text-warning-foreground font-semibold text-lg disabled:opacity-50"
+            className="h-24 bg-gradient-accent hover:shadow-card hover:scale-[1.02] text-accent-foreground font-bold text-lg disabled:opacity-50 border border-accent/20 shadow-soft"
           >
             <div className="text-center">
-              <Clock className="w-6 h-6 mx-auto mb-1" />
-              Pulang
+              <Clock className="w-7 h-7 mx-auto mb-2" />
+              <span className="text-base">Pulang</span>
             </div>
           </Button>
         </div>
