@@ -13,7 +13,10 @@ export default defineConfig(({ mode }) => ({
     allowedHosts: process.env.TEMPO === "true" ? true : undefined,
   },
   plugins: [
-    react(),
+    react({
+      // Enable React Fast Refresh
+      fastRefresh: true,
+    }),
     tempo(),
     mode === "development" && componentTagger(),
   ].filter(Boolean),
@@ -21,5 +24,42 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  build: {
+    // Production optimizations
+    minify: "terser",
+    terserOptions: {
+      compress: {
+        drop_console: mode === "production",
+        drop_debugger: true,
+      },
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunk for better caching
+          vendor: ["react", "react-dom"],
+          // UI components chunk
+          ui: ["@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu"],
+          // Supabase chunk
+          supabase: ["@supabase/supabase-js"],
+        },
+      },
+    },
+    // Enable source maps in development
+    sourcemap: mode === "development",
+    // Optimize bundle size
+    reportCompressedSize: true,
+    chunkSizeWarningLimit: 1000,
+  },
+  // Optimize dependencies
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "@supabase/supabase-js",
+      "date-fns",
+      "lucide-react",
+    ],
   },
 }));
