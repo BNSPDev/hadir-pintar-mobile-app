@@ -235,12 +235,17 @@ export default function Dashboard() {
         </Card>
 
         {/* Current Time */}
-        <Card className="shadow-card border border-border bg-gradient-to-br from-primary/5 to-primary/10">
-          <CardContent className="p-5 text-center">
-            <p className="text-sm text-muted-foreground mb-2">
-              {indonesianDate}
-            </p>
-            <p className="text-3xl font-bold text-primary">{timeString}</p>
+        <Card className="shadow-card border border-accent/20 bg-gradient-to-br from-accent/5 via-background to-secondary/5 backdrop-blur-sm">
+          <CardContent className="p-6 text-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-transparent pointer-events-none"></div>
+            <div className="relative z-10">
+              <p className="text-sm text-muted-foreground mb-3 font-medium tracking-wide">
+                {indonesianDate}
+              </p>
+              <p className="text-4xl font-bold text-primary tracking-tight">
+                {timeString}
+              </p>
+            </div>
           </CardContent>
         </Card>
 
