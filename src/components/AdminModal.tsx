@@ -94,6 +94,12 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         })),
       );
 
+      // Combine profiles with user roles
+      const usersWithRoles = profiles.map((profile) => ({
+        ...profile,
+        role: rolesMap.get(profile.user_id) || "user",
+      }));
+
       // Get attendance counts for each user
       const usersWithStats = await Promise.all(
         profiles.map(async (profile) => {

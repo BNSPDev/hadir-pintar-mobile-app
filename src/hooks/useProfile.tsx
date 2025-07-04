@@ -21,7 +21,7 @@ export function useProfile() {
 
     if (user?.id) {
       fetchProfile();
-      // Set a timeout to prevent infinite loading
+      // Set a timeout to prevent infinite loading - reduced to 5 seconds
       timeoutId = setTimeout(() => {
         console.warn("Profile fetch timeout, setting fallback profile");
         setProfile({
@@ -33,7 +33,7 @@ export function useProfile() {
           employee_id: "N/A",
         });
         setLoading(false);
-      }, 10000); // 10 second timeout
+      }, 5000); // Reduced timeout to 5 seconds
     } else if (user === null) {
       // User is explicitly null (not authenticated)
       setProfile(null);
