@@ -13,10 +13,7 @@ export default defineConfig(({ mode }) => ({
     allowedHosts: process.env.TEMPO === "true" ? true : undefined,
   },
   plugins: [
-    react({
-      // Enable React Fast Refresh
-      fastRefresh: true,
-    }),
+    react(),
     tempo(),
     mode === "development" && componentTagger(),
   ].filter(Boolean),

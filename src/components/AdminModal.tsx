@@ -44,17 +44,10 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     try {
       setLoading(true);
 
-      // Get all profiles first - this should include all 8 users (7 + admin)
-      const { data: profiles, error: profilesError } = await supabase.from(
-        "profiles",
-      ).select(`
-          id,
-          user_id,
-          full_name,
-          position,
-          department,
-          employee_id
-        `);
+      // Get all profiles first
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, user_id, full_name, position, department, employee_id");
 
       if (profilesError) {
         console.error("Profiles error:", profilesError);
@@ -372,7 +365,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       ];
 
       // Insert summary sheet at the beginning
-      XLSX.utils.book_append_sheet(workbook, summarySheet, "Ringkasan", 0);
+      XLSX.utils.book_append_sheet(workbook, summarySheet, "Ringkasan");
 
       // Generate Excel file
       const excelBuffer = XLSX.write(workbook, {
