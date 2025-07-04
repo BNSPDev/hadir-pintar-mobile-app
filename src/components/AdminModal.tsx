@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import * as XLSX from "xlsx";
 
 interface AdminModalProps {
   isOpen: boolean;
@@ -248,8 +249,11 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         return;
       }
 
-      // Convert to CSV format with proper escaping
-      const csvHeaders = [
+      // Create new workbook
+      const workbook = XLSX.utils.book_new();
+
+      // Headers for all sheets
+      const headers = [
         "Tanggal",
         "Nama Lengkap",
         "NIP",
@@ -262,43 +266,123 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         "Laporan Kegiatan",
       ];
 
-      const csvRows = attendanceRecords.map((record) => {
-        // Safe date parsing
-        const recordDate = record.date ? new Date(record.date) : null;
-        const clockInTime = record.clock_in_time
-          ? new Date(record.clock_in_time)
-          : null;
-        const clockOutTime = record.clock_out_time
-          ? new Date(record.clock_out_time)
-          : null;
+      // Group attendance records by user
+      const recordsByUser = new Map();
 
-        // Get profile data from map
-        const profile = profilesMap.get(record.user_id);
-
-        return [
-          recordDate ? format(recordDate, "dd/MM/yyyy") : "-",
-          profile?.full_name || "Profil Tidak Ditemukan",
-          profile?.employee_id || "-",
-          profile?.position || "-",
-          profile?.department || "-",
-          clockInTime ? format(clockInTime, "HH:mm") : "-",
-          clockOutTime ? format(clockOutTime, "HH:mm") : "-",
-          record.work_type || "-",
-          record.status || "-",
-          (record.daily_report || "-").replace(/"/g, '""'), // Escape quotes in CSV
-        ];
+      attendanceRecords.forEach((record) => {
+        if (!recordsByUser.has(record.user_id)) {
+          recordsByUser.set(record.user_id, []);
+        }
+        recordsByUser.get(record.user_id).push(record);
       });
 
-      // Create CSV content with BOM for proper Excel encoding (Indonesian format uses semicolon)
-      const csvContent =
-        "\uFEFF" +
-        [csvHeaders, ...csvRows]
-          .map((row) => row.map((field) => `"${field}"`).join(";"))
-          .join("\r\n");
+      console.log(`Creating sheets for ${recordsByUser.size} users`);
+
+      // Create a sheet for each user
+      recordsByUser.forEach((userRecords, userId) => {
+        const profile = profilesMap.get(userId);
+        const userName = profile?.full_name || `User-${userId.slice(-6)}`;
+
+        // Sanitize sheet name (Excel has restrictions)
+        const sheetName = userName
+          .replace(/[\\\/\?\*\[\]]/g, "-")
+          .substring(0, 31);
+
+        const sheetData = [
+          headers,
+          ...userRecords.map((record) => {
+            const recordDate = record.date ? new Date(record.date) : null;
+            const clockInTime = record.clock_in_time
+              ? new Date(record.clock_in_time)
+              : null;
+            const clockOutTime = record.clock_out_time
+              ? new Date(record.clock_out_time)
+              : null;
+
+            return [
+              recordDate ? format(recordDate, "dd/MM/yyyy") : "-",
+              profile?.full_name || "Profil Tidak Ditemukan",
+              profile?.employee_id || "-",
+              profile?.position || "-",
+              profile?.department || "-",
+              clockInTime ? format(clockInTime, "HH:mm") : "-",
+              clockOutTime ? format(clockOutTime, "HH:mm") : "-",
+              record.work_type || "-",
+              record.status || "-",
+              record.daily_report || "-",
+            ];
+          }),
+        ];
+
+        // Create worksheet
+        const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+
+        // Auto-size columns
+        const colWidths = [
+          { wch: 12 }, // Tanggal
+          { wch: 20 }, // Nama
+          { wch: 15 }, // NIP
+          { wch: 15 }, // Jabatan
+          { wch: 15 }, // Unit Kerja
+          { wch: 10 }, // Jam Masuk
+          { wch: 10 }, // Jam Pulang
+          { wch: 8 }, // Tipe Kerja
+          { wch: 12 }, // Status
+          { wch: 30 }, // Laporan
+        ];
+        worksheet["!cols"] = colWidths;
+
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+      });
+
+      // Also create a summary sheet
+      const summaryData = [
+        ["Ringkasan Presensi BNSP", "", "", "", ""],
+        ["Tanggal Download:", format(new Date(), "dd/MM/yyyy HH:mm")],
+        ["Total Pengguna:", recordsByUser.size],
+        ["Total Record:", attendanceRecords.length],
+        [""],
+        ["Nama", "NIP", "Total Presensi", "Terakhir Hadir", "Status"],
+        ...Array.from(recordsByUser.entries()).map(([userId, userRecords]) => {
+          const profile = profilesMap.get(userId);
+          const lastRecord = userRecords[0]; // Records are ordered by date desc
+          const lastDate = lastRecord
+            ? format(new Date(lastRecord.date), "dd/MM/yyyy")
+            : "-";
+
+          return [
+            profile?.full_name || "Tidak Diketahui",
+            profile?.employee_id || "-",
+            userRecords.length,
+            lastDate,
+            userRecords.length > 0 ? "Aktif" : "Tidak Aktif",
+          ];
+        }),
+      ];
+
+      const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+      summarySheet["!cols"] = [
+        { wch: 25 }, // Nama
+        { wch: 15 }, // NIP
+        { wch: 15 }, // Total
+        { wch: 15 }, // Terakhir
+        { wch: 12 }, // Status
+      ];
+
+      // Insert summary sheet at the beginning
+      XLSX.utils.book_append_sheet(workbook, summarySheet, "Ringkasan", 0);
+
+      // Generate Excel file
+      const excelBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+        bookSST: false,
+      });
 
       // Create and download file
-      const blob = new Blob([csvContent], {
-        type: "text/csv;charset=utf-8;",
+      const blob = new Blob([excelBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
 
       const link = document.createElement("a");
@@ -306,7 +390,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       link.setAttribute("href", url);
       link.setAttribute(
         "download",
-        `rekap-presensi-bnsp-${format(new Date(), "yyyy-MM-dd")}.csv`,
+        `rekap-presensi-bnsp-${format(new Date(), "yyyy-MM-dd")}.xlsx`,
       );
       link.style.visibility = "hidden";
       document.body.appendChild(link);
@@ -318,7 +402,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
 
       toast({
         title: "Berhasil",
-        description: `Data rekap presensi (${attendanceRecords.length} record) berhasil diunduh`,
+        description: `File Excel dengan ${recordsByUser.size} sheet pengguna berhasil diunduh`,
       });
     } catch (error: any) {
       console.error("Error downloading data:", error);
