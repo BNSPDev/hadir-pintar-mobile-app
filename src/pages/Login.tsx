@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,9 +15,13 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { user, signIn } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
+
+  // Get the intended destination from location state
+  const from = (location.state as any)?.from?.pathname || "/";
 
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={from} replace />;
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -41,6 +45,7 @@ export default function Login() {
           title: "Login Berhasil",
           description: "Selamat datang kembali!",
         });
+        // Navigation will be handled by the Navigate component when user state changes
       }
     } catch (error) {
       toast({

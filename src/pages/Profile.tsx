@@ -9,6 +9,7 @@ import { AboutModal } from "@/components/AboutModal";
 import { TermsModal } from "@/components/TermsModal";
 import { PrivacyModal } from "@/components/PrivacyModal";
 import { AdminModal } from "@/components/AdminModal";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -37,14 +38,7 @@ export default function Profile() {
   const [showAdminModal, setShowAdminModal] = useState(false);
 
   if (authLoading || profileLoading || roleLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Memuat...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen message="Memuat profil..." />;
   }
 
   if (!user) {
