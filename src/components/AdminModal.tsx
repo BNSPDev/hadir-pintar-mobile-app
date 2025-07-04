@@ -41,54 +41,113 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     try {
       setLoading(true);
 
-      // Get all users with their profiles and roles
+      // Get all users with their profiles and roles using left join to include users without roles
       const { data: profiles, error: profilesError } = await supabase.from(
         "profiles",
       ).select(`
-          *,
-          user_roles!inner(role)
+          id,
+          user_id,
+          full_name,
+          position,
+          department,
+          employee_id,
+          user_roles(role)
         `);
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error("Profiles error:", profilesError);
+        throw new Error(`Failed to fetch profiles: ${profilesError.message}`);
+      }
 
-      // Get attendance counts for each user
+      if (!profiles || profiles.length === 0) {
+        toast({
+          title: "Informasi",
+          description: "Tidak ada data pengguna ditemukan",
+        });
+        setUsers([]);
+        return;
+      }
+
+      // Get attendance counts for each user with better error handling
       const usersWithStats = await Promise.all(
         profiles.map(async (profile) => {
-          const { count } = await supabase
-            .from("attendance_records")
-            .select("*", { count: "exact", head: true })
-            .eq("user_id", profile.user_id);
+          try {
+            // Get attendance count
+            const { count, error: countError } = await supabase
+              .from("attendance_records")
+              .select("*", { count: "exact", head: true })
+              .eq("user_id", profile.user_id);
 
-          const { data: lastAttendance } = await supabase
-            .from("attendance_records")
-            .select("date")
-            .eq("user_id", profile.user_id)
-            .order("date", { ascending: false })
-            .limit(1)
-            .maybeSingle();
+            if (countError) {
+              console.warn(
+                `Count error for user ${profile.user_id}:`,
+                countError,
+              );
+            }
 
-          return {
-            id: profile.id,
-            email: profile.user_id, // We'll get actual email from auth if needed
-            full_name: profile.full_name,
-            position: profile.position,
-            department: profile.department,
-            employee_id: profile.employee_id,
-            role: profile.user_roles?.role || "user",
-            total_attendance: count || 0,
-            last_attendance: lastAttendance?.date || null,
-          };
+            // Get last attendance
+            const { data: lastAttendance, error: lastError } = await supabase
+              .from("attendance_records")
+              .select("date")
+              .eq("user_id", profile.user_id)
+              .order("date", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (lastError) {
+              console.warn(
+                `Last attendance error for user ${profile.user_id}:`,
+                lastError,
+              );
+            }
+
+            return {
+              id: profile.id,
+              email: profile.user_id,
+              full_name: profile.full_name || "Nama tidak tersedia",
+              position: profile.position || "Jabatan tidak tersedia",
+              department: profile.department || "Unit kerja tidak tersedia",
+              employee_id: profile.employee_id || "NIP tidak tersedia",
+              role: profile.user_roles?.role || "user",
+              total_attendance: count || 0,
+              last_attendance: lastAttendance?.date || null,
+            };
+          } catch (userError) {
+            console.error(
+              `Error processing user ${profile.user_id}:`,
+              userError,
+            );
+            // Return basic user data even if attendance fetch fails
+            return {
+              id: profile.id,
+              email: profile.user_id,
+              full_name: profile.full_name || "Nama tidak tersedia",
+              position: profile.position || "Jabatan tidak tersedia",
+              department: profile.department || "Unit kerja tidak tersedia",
+              employee_id: profile.employee_id || "NIP tidak tersedia",
+              role: profile.user_roles?.role || "user",
+              total_attendance: 0,
+              last_attendance: null,
+            };
+          }
         }),
       );
 
       setUsers(usersWithStats);
-    } catch (error) {
+
+      toast({
+        title: "Berhasil",
+        description: `Data ${usersWithStats.length} pengguna berhasil dimuat`,
+      });
+    } catch (error: any) {
       console.error("Error fetching users data:", error);
       toast({
         title: "Error",
-        description: "Gagal memuat data pengguna",
+        description:
+          error.message || "Gagal memuat data pengguna. Silakan coba lagi.",
         variant: "destructive",
       });
+      setUsers([]);
     } finally {
       setLoading(false);
     }
