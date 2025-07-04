@@ -33,6 +33,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [assigningRoles, setAssigningRoles] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
