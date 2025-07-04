@@ -24,7 +24,9 @@ export async function repairUserData(): Promise<RepairResult> {
   };
 
   try {
-    // Get all unique user_ids from attendance records (these are active users)
+    // Get all unique user_ids from multiple sources to catch all users
+
+    // 1. Get users from attendance records (active users)
     const { data: attendanceRecords, error: attendanceError } = await supabase
       .from("attendance_records")
       .select("user_id");
@@ -33,17 +35,42 @@ export async function repairUserData(): Promise<RepairResult> {
       result.errors.push(
         `Failed to fetch attendance records: ${attendanceError.message}`,
       );
-      return result;
     }
 
-    const uniqueUserIds = [
-      ...new Set(attendanceRecords?.map((r) => r.user_id) || []),
+    // 2. Get users from profiles (users with existing profiles)
+    const { data: profileRecords, error: profileError } = await supabase
+      .from("profiles")
+      .select("user_id");
+
+    if (profileError) {
+      result.errors.push(
+        `Failed to fetch profile records: ${profileError.message}`,
+      );
+    }
+
+    // 3. Get users from user_roles (users with roles)
+    const { data: roleRecords, error: roleError } = await supabase
+      .from("user_roles")
+      .select("user_id");
+
+    if (roleError) {
+      result.errors.push(`Failed to fetch role records: ${roleError.message}`);
+    }
+
+    // Combine all user_ids from different sources
+    const allUserIds = [
+      ...(attendanceRecords?.map((r) => r.user_id) || []),
+      ...(profileRecords?.map((r) => r.user_id) || []),
+      ...(roleRecords?.map((r) => r.user_id) || []),
     ];
+
+    const uniqueUserIds = [...new Set(allUserIds)];
     result.totalUsers = uniqueUserIds.length;
 
-    console.log(
-      `Found ${uniqueUserIds.length} unique users in attendance records`,
-    );
+    console.log(`Found ${uniqueUserIds.length} unique users across all sources:
+      - ${attendanceRecords?.length || 0} from attendance
+      - ${profileRecords?.length || 0} from profiles
+      - ${roleRecords?.length || 0} from roles`);
 
     // Check each user for missing profile and role
     for (const userId of uniqueUserIds) {
