@@ -136,9 +136,15 @@ export function AdminAttendanceForm() {
         .order("full_name");
 
       if (error) {
-        console.error("Supabase error fetching users:", error);
+        console.error("Supabase error fetching users:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          full: error,
+        });
         throw new Error(
-          `Database error: ${error.message} (Code: ${error.code})`,
+          `Database error: ${error.message || JSON.stringify(error)}`,
         );
       }
 
