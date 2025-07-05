@@ -7,9 +7,11 @@ import { MobileHeader } from "@/components/MobileHeader";
 import { BottomNav } from "@/components/BottomNav";
 import { ClockOutModal } from "@/components/ClockOutModal";
 import { ActivityReportModal } from "@/components/ActivityReportModal";
+import { AdminAttendanceForm } from "@/components/AdminAttendanceForm";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -25,6 +27,7 @@ import {
   CheckCircle,
   Clock,
   ChevronRight,
+  Shield,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
