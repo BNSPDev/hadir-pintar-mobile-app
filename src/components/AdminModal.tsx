@@ -976,32 +976,89 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                   {filteredUsers.map((user) => (
                     <tr key={user.id}>
                       <td className="px-3 sm:px-6 py-4 text-sm font-medium text-gray-900">
-                        <div className="truncate max-w-[150px] sm:max-w-none">
-                          {user.full_name}
-                        </div>
+                        {user.isEditing ? (
+                          <Input
+                            value={user.tempData?.full_name || user.full_name}
+                            onChange={(e) =>
+                              handleInputChange(
+                                user.id,
+                                "full_name",
+                                e.target.value,
+                              )
+                            }
+                            className="w-full text-sm"
+                            placeholder="Nama lengkap"
+                          />
+                        ) : (
+                          <div className="truncate max-w-[150px] sm:max-w-none">
+                            {user.full_name}
+                          </div>
+                        )}
                       </td>
                       <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            user.role === "admin"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {user.role === "admin" ? "Admin" : "User"}
-                        </span>
+                        {user.isEditing ? (
+                          <Select
+                            value={user.tempData?.role || user.role}
+                            onValueChange={(value) =>
+                              handleInputChange(user.id, "role", value)
+                            }
+                          >
+                            <SelectTrigger className="w-full text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="user">User</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              user.role === "admin"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {user.role === "admin" ? "Admin" : "User"}
+                          </span>
+                        )}
                       </td>
                       <td className="px-3 sm:px-6 py-4 text-center text-sm font-medium">
-                        <div className="flex justify-center">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-2 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-                            onClick={() => toggleEdit(user.id)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                            Edit
-                          </Button>
+                        <div className="flex justify-center gap-2">
+                          {user.isEditing ? (
+                            <>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="gap-1 bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() => saveUserData(user.id)}
+                                disabled={loading}
+                              >
+                                <Save className="h-4 w-4" />
+                                Simpan
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1"
+                                onClick={() => toggleEdit(user.id)}
+                                disabled={loading}
+                              >
+                                <XCircle className="h-4 w-4" />
+                                Batal
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-2 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                              onClick={() => toggleEdit(user.id)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                              Edit
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
