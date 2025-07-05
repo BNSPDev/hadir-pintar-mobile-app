@@ -31,8 +31,9 @@ export function BottomNav() {
       className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t-2 border-border shadow-lg z-40"
       role="navigation"
       aria-label="Navigasi utama"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="flex items-center justify-around py-3 px-2 safe-area-bottom">
+      <div className="flex items-center justify-around py-3 px-2 pb-6 sm:pb-3">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
