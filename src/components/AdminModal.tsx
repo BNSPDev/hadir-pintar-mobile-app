@@ -992,26 +992,15 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                         </span>
                       </td>
                       <td className="px-3 sm:px-6 py-4 text-center text-sm font-medium">
-                        <div className="flex flex-col sm:flex-row justify-center gap-1 sm:gap-2">
+                        <div className="flex justify-center">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="gap-1 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 text-xs sm:text-sm"
+                            className="gap-2 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
                             onClick={() => toggleEdit(user.id)}
                           >
-                            <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
-                            <span className="hidden sm:inline">Edit</span>
-                            <span className="sm:hidden">E</span>
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            className="gap-1 bg-red-50 border-red-200 text-red-700 hover:bg-red-100 text-xs sm:text-sm"
-                            onClick={() => deleteUser(user.id)}
-                          >
-                            <Trash className="h-3 w-3 sm:h-4 sm:w-4" />
-                            <span className="hidden sm:inline">Hapus</span>
-                            <span className="sm:hidden">H</span>
+                            <Pencil className="h-4 w-4" />
+                            Edit
                           </Button>
                         </div>
                       </td>
