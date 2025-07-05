@@ -247,8 +247,12 @@ export function AdminAttendanceForm() {
               </SelectTrigger>
               <SelectContent>
                 {loadingUsers ? (
-                  <SelectItem value="" disabled>
+                  <SelectItem value="loading" disabled>
                     Memuat...
+                  </SelectItem>
+                ) : users.length === 0 ? (
+                  <SelectItem value="no-users" disabled>
+                    Tidak ada user
                   </SelectItem>
                 ) : (
                   users.map((user) => (
