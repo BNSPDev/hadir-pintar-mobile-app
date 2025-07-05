@@ -30,32 +30,76 @@ export default function Login() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Reset errors
+    setEmailError("");
+    setPasswordError("");
+
+    // Validate email
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      setEmailError(emailValidation.error || "Email tidak valid");
+      return;
+    }
+
+    // Validate password
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      setPasswordError(passwordValidation.error || "Password tidak valid");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const { error } = await signIn(email, password);
+      const { error } = await signIn(email.trim().toLowerCase(), password);
 
       if (error) {
+        // Map common error messages to Indonesian
+        const errorMessages: Record<string, string> = {
+          "Invalid login credentials": "Email atau password salah",
+          "Email not confirmed":
+            "Email belum dikonfirmasi. Silakan cek email Anda.",
+          "Too many requests":
+            "Terlalu banyak percobaan. Silakan coba lagi nanti.",
+          "Network error": "Masalah koneksi internet. Silakan coba lagi.",
+        };
+
+        const userFriendlyMessage =
+          errorMessages[error.message] || error.message;
+
         toast({
           title: "Login Gagal",
-          description:
-            error.message === "Invalid login credentials"
-              ? "Email atau password salah"
-              : error.message,
+          description: userFriendlyMessage,
           variant: "destructive",
+        });
+
+        // Report error for monitoring
+        reportError(new Error(error.message), {
+          context: "login",
+          email: email.trim().toLowerCase(),
         });
       } else {
         toast({
           title: "Login Berhasil",
           description: "Selamat datang kembali!",
         });
-        // Navigation will be handled by the Navigate component when user state changes
       }
     } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan yang tidak diketahui";
+
       toast({
         title: "Terjadi Kesalahan",
-        description: "Silakan coba lagi",
+        description: "Silakan coba lagi atau hubungi administrator",
         variant: "destructive",
+      });
+
+      // Report unexpected errors
+      reportError(error instanceof Error ? error : new Error(errorMessage), {
+        context: "login_unexpected",
       });
     } finally {
       setLoading(false);
