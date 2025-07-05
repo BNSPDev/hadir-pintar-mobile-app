@@ -268,7 +268,7 @@ export default function Dashboard() {
           )}
 
           <Button
-            onClick={() => setShowClockOutModal(true)}
+            onClick={() => handleClockOutClick()}
             disabled={
               !todayRecord?.clock_in_time || !!todayRecord?.clock_out_time
             }
