@@ -116,6 +116,8 @@ export function AdminAttendanceForm() {
 
   const fetchTodayAttendance = async () => {
     try {
+      console.log("Fetching today's attendance as admin for date:", today);
+
       // First get attendance records
       const { data: attendanceData, error: attendanceError } = await supabase
         .from("attendance_records")
@@ -125,12 +127,12 @@ export function AdminAttendanceForm() {
 
       if (attendanceError) {
         console.error(
-          "Error fetching attendance records:",
-          attendanceError.message,
+          "Supabase error fetching attendance records:",
+          attendanceError,
         );
         toast({
           title: "Error",
-          description: `Gagal memuat data presensi: ${attendanceError.message}`,
+          description: `Gagal memuat data presensi: ${attendanceError.message} (Code: ${attendanceError.code})`,
           variant: "destructive",
         });
         return;
