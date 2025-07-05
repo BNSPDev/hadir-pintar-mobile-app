@@ -107,32 +107,55 @@ export function AdminAttendanceForm() {
 
   const fetchTodayAttendance = async () => {
     try {
-      const { data, error } = await supabase
+      // First get attendance records
+      const { data: attendanceData, error: attendanceError } = await supabase
         .from("attendance_records")
-        .select(
-          `
-          *,
-          profiles (
-            full_name,
-            position,
-            department
-          )
-        `,
-        )
+        .select("*")
         .eq("date", today)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching today's attendance:", error.message);
+      if (attendanceError) {
+        console.error(
+          "Error fetching attendance records:",
+          attendanceError.message,
+        );
         toast({
           title: "Error",
-          description: `Gagal memuat data presensi: ${error.message}`,
+          description: `Gagal memuat data presensi: ${attendanceError.message}`,
           variant: "destructive",
         });
         return;
       }
 
-      setTodayAttendance(data || []);
+      // If no attendance records, set empty array
+      if (!attendanceData || attendanceData.length === 0) {
+        setTodayAttendance([]);
+        return;
+      }
+
+      // Get all user profiles for the users in attendance records
+      const userIds = attendanceData.map((record) => record.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, position, department")
+        .in("user_id", userIds);
+
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError.message);
+        // Still show attendance data even if profiles fail
+        setTodayAttendance(attendanceData);
+        return;
+      }
+
+      // Combine attendance data with profile data
+      const combinedData = attendanceData.map((record) => ({
+        ...record,
+        profiles:
+          profilesData?.find((profile) => profile.user_id === record.user_id) ||
+          null,
+      }));
+
+      setTodayAttendance(combinedData);
     } catch (error: any) {
       console.error("Error fetching today's attendance:", error.message);
       toast({
