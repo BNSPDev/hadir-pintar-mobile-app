@@ -122,10 +122,24 @@ export function AdminAttendanceForm() {
         .eq("date", today)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching today's attendance:", error);
+        toast({
+          title: "Error",
+          description: "Gagal memuat data presensi hari ini",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setTodayAttendance(data || []);
     } catch (error: any) {
       console.error("Error fetching today's attendance:", error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat data presensi hari ini",
+        variant: "destructive",
+      });
     }
   };
 
