@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MobileHeader } from "@/components/MobileHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { validateEmail, validatePassword } from "@/utils/validation";
+import { reportError } from "@/utils/monitoring";
 import { Loader2 } from "lucide-react";
 
 export default function Login() {
