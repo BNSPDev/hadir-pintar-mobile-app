@@ -685,9 +685,10 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       });
 
       // Create period description for summary
-      const periodText = selectedMonth
-        ? `${getMonthName(selectedMonth)} ${selectedYear}`
-        : `Tahun ${selectedYear}`;
+      const periodText =
+        selectedMonth && selectedMonth !== "all"
+          ? `${getMonthName(selectedMonth)} ${selectedYear}`
+          : `Tahun ${selectedYear}`;
 
       // Also create a summary sheet
       const summaryData = [
@@ -728,9 +729,10 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       XLSX.utils.book_append_sheet(workbook, summarySheet, "Ringkasan");
 
       // Generate filename based on selected period
-      const filenamePeriod = selectedMonth
-        ? `${getMonthName(selectedMonth)}-${selectedYear}`
-        : `${selectedYear}`;
+      const filenamePeriod =
+        selectedMonth && selectedMonth !== "all"
+          ? `${getMonthName(selectedMonth)}-${selectedYear}`
+          : `${selectedYear}`;
 
       // Generate Excel file
       const excelBuffer = XLSX.write(workbook, {
