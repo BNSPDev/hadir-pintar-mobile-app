@@ -212,6 +212,64 @@ export default function Dashboard() {
   });
   const timeString = format(currentTime, "HH:mm:ss");
 
+  // If user is admin, show admin dashboard
+  if (isAdmin()) {
+    return (
+      <div className="min-h-screen pb-32 sm:pb-24 bg-background">
+        <MobileHeader
+          title={`Admin - ${profile?.full_name || "Administrator"}`}
+        />
+        <div className="p-4 space-y-6 mt-4">
+          {/* Admin Profile Card */}
+          <Card className="shadow-md border border-border bg-gradient-to-br from-primary/10 via-card to-accent/10">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Avatar className="w-16 h-16 ring-2 ring-primary/40 shadow-sm">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
+                      {profile?.full_name?.charAt(0) || "A"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full border-2 border-white shadow-sm flex items-center justify-center">
+                    <Shield className="w-3 h-3 text-primary-foreground" />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="font-bold text-xl text-foreground truncate">
+                    {profile?.full_name || "Administrator"}
+                  </h2>
+                  <p className="text-sm font-semibold text-primary">
+                    Administrator
+                  </p>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Panel Manajemen Presensi
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Current Time */}
+          <Card className="shadow-md border border-border bg-gradient-to-br from-primary/5 via-card to-accent/5">
+            <CardContent className="p-6 text-center">
+              <p className="text-sm text-muted-foreground mb-3 font-medium tracking-wide">
+                {indonesianDate}
+              </p>
+              <p className="text-4xl font-bold text-primary tracking-tight">
+                {timeString}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Admin Attendance Form */}
+          <AdminAttendanceForm />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  // Regular user dashboard
   return (
     <div className="min-h-screen pb-32 sm:pb-24 bg-background">
       <MobileHeader title={profile?.full_name || "User"} />
