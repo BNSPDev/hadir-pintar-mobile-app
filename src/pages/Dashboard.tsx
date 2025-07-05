@@ -344,11 +344,24 @@ export default function Dashboard() {
                   Laporkan Kegiatan Hari Ini
                 </h3>
                 <p className="text-sm text-muted-foreground font-medium leading-relaxed">
-                  Jangan lupa untuk selalu melaporkan pekerjaanmu setiap harian.
+                  {todayRecord?.daily_report && todayRecord.daily_report.trim()
+                    ? "✅ Laporan sudah terisi. Klik untuk melihat atau edit."
+                    : "Jangan lupa untuk selalu melaporkan pekerjaanmu setiap harian."}
                 </p>
               </div>
-              <div className="bg-accent/10 rounded-full p-2">
-                <ChevronRight className="w-6 h-6 text-accent" />
+              <div
+                className={`rounded-full p-2 ${
+                  todayRecord?.daily_report && todayRecord.daily_report.trim()
+                    ? "bg-success/10"
+                    : "bg-accent/10"
+                }`}
+              >
+                {todayRecord?.daily_report &&
+                todayRecord.daily_report.trim() ? (
+                  <CheckCircle className="w-6 h-6 text-success" />
+                ) : (
+                  <ChevronRight className="w-6 h-6 text-accent" />
+                )}
               </div>
             </div>
           </CardContent>
