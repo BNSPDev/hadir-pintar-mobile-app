@@ -173,11 +173,23 @@ export default function Login() {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (passwordError) setPasswordError("");
+                  }}
                   placeholder="Masukkan password"
                   required
-                  className="h-12 bg-background border-2 border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className={`h-12 bg-background border-2 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20 ${
+                    passwordError
+                      ? "border-destructive focus:border-destructive"
+                      : "border-border focus:border-primary"
+                  }`}
                 />
+                {passwordError && (
+                  <p className="text-sm text-destructive mt-1">
+                    {passwordError}
+                  </p>
+                )}
               </div>
 
               <Button
