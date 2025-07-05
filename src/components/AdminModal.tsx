@@ -851,7 +851,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                     Tahun:
                   </label>
                   <Select value={selectedYear} onValueChange={setSelectedYear}>
-                    <SelectTrigger className="w-[120px]">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Tahun" />
                     </SelectTrigger>
                     <SelectContent>
@@ -866,22 +866,26 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-gray-700">
-                    Ekspor Data:
-                  </label>
-                  <Button
-                    onClick={downloadUserData}
-                    disabled={downloading || users.length === 0}
-                    variant="default"
-                    className="gap-2 bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <Download className="h-4 w-4" />
+              </div>
+
+              {/* Download Button - Full Width on Mobile */}
+              <div className="w-full">
+                <Button
+                  onClick={downloadUserData}
+                  disabled={downloading || users.length === 0}
+                  size="lg"
+                  className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white font-bold shadow-md"
+                >
+                  <Download className="h-5 w-5" />
+                  <span className="hidden sm:inline">
                     {downloading
                       ? "Mengunduh..."
                       : `Excel ${selectedMonth && selectedMonth !== "all" ? getMonthName(selectedMonth) : "Tahunan"} ${selectedYear}`}
-                  </Button>
-                </div>
+                  </span>
+                  <span className="sm:hidden">
+                    {downloading ? "Mengunduh..." : "Unduh Excel"}
+                  </span>
+                </Button>
               </div>
             </div>
             <div className="flex flex-col gap-1">
