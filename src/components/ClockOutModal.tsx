@@ -19,15 +19,29 @@ export function ClockOutModal({
   loading,
 }: ClockOutModalProps) {
   const [report, setReport] = useState("");
+  const [error, setError] = useState("");
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (report.trim()) {
-      onSubmit(report.trim());
-      setReport("");
+    setError("");
+
+    const validation = validateDailyReport(report);
+    if (!validation.isValid) {
+      setError(validation.error || "Laporan kegiatan tidak valid");
+      return;
     }
+
+    onSubmit(report.trim());
+    setReport("");
+    setError("");
+  };
+
+  const handleClose = () => {
+    setReport("");
+    setError("");
+    onClose();
   };
 
   return (
