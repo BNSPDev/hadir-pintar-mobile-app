@@ -975,10 +975,12 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredUsers.map((user) => (
                     <tr key={user.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {user.full_name}
+                      <td className="px-3 sm:px-6 py-4 text-sm font-medium text-gray-900">
+                        <div className="truncate max-w-[150px] sm:max-w-none">
+                          {user.full_name}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">
                         <span
                           className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                             user.role === "admin"
@@ -989,25 +991,27 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                           {user.role === "admin" ? "Admin" : "User"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                        <div className="flex justify-center space-x-2">
+                      <td className="px-3 sm:px-6 py-4 text-center text-sm font-medium">
+                        <div className="flex flex-col sm:flex-row justify-center gap-1 sm:gap-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="gap-2 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                            className="gap-1 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 text-xs sm:text-sm"
                             onClick={() => toggleEdit(user.id)}
                           >
-                            <Pencil className="h-4 w-4" />
-                            Edit
+                            <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
+                            <span className="hidden sm:inline">Edit</span>
+                            <span className="sm:hidden">E</span>
                           </Button>
                           <Button
                             variant="destructive"
                             size="sm"
-                            className="gap-2 bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+                            className="gap-1 bg-red-50 border-red-200 text-red-700 hover:bg-red-100 text-xs sm:text-sm"
                             onClick={() => deleteUser(user.id)}
                           >
-                            <Trash className="h-4 w-4" />
-                            Hapus
+                            <Trash className="h-3 w-3 sm:h-4 sm:w-4" />
+                            <span className="hidden sm:inline">Hapus</span>
+                            <span className="sm:hidden">H</span>
                           </Button>
                         </div>
                       </td>
