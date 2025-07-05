@@ -36,12 +36,38 @@ export function ActivityReportModal({
   const [selectedDate, setSelectedDate] = useState(
     format(new Date(), "yyyy-MM-dd"),
   );
+  const [todayReport, setTodayReport] = useState("");
 
   useEffect(() => {
     if (isOpen && user) {
       fetchReports();
+      fetchTodayReport();
     }
   }, [isOpen, user]);
+
+  const fetchTodayReport = async () => {
+    try {
+      const today = format(new Date(), "yyyy-MM-dd");
+      const { data, error } = await supabase
+        .from("attendance_records")
+        .select("daily_report")
+        .eq("user_id", user?.id)
+        .eq("date", today)
+        .maybeSingle();
+
+      if (error && error.code !== "PGRST116") throw error;
+
+      if (data?.daily_report) {
+        setTodayReport(data.daily_report);
+        setNewReport(data.daily_report);
+      } else {
+        setTodayReport("");
+        setNewReport("");
+      }
+    } catch (error) {
+      console.error("Error fetching today's report:", error);
+    }
+  };
 
   const fetchReports = async () => {
     try {
