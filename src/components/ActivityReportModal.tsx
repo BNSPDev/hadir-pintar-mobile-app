@@ -13,6 +13,7 @@ import { id } from "date-fns/locale";
 interface ActivityReportModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onReportSaved?: () => void; // Callback to refresh dashboard
 }
 
 interface ActivityReport {
