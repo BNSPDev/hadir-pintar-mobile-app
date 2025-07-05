@@ -10,7 +10,13 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import * as XLSX from "xlsx";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AdminModalProps {
   isOpen: boolean;
@@ -67,8 +73,10 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
   const [downloading, setDownloading] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState<string>("");
-  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
-  
+  const [selectedYear, setSelectedYear] = useState<string>(
+    new Date().getFullYear().toString(),
+  );
+
   // Available departments
   const departments = [
     "Sekretariat",
@@ -76,19 +84,19 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     "Sertifikasi",
     "Pengembangan",
     "Hukum",
-    "Umum"
+    "Umum",
   ] as const;
-  
+
   // Available roles
   const roles = ["admin", "user"] as const;
-  
+
   // Type guard for role
-  const isRole = (role: string): role is 'admin' | 'user' => {
-    return role === 'admin' || role === 'user';
+  const isRole = (role: string): role is "admin" | "user" => {
+    return role === "admin" || role === "user";
   };
-  
+
   // Type guard for department
-  const isDepartment = (dept: string): dept is typeof departments[number] => {
+  const isDepartment = (dept: string): dept is (typeof departments)[number] => {
     return departments.includes(dept as any);
   };
 
@@ -101,14 +109,14 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      
+
       // Get all profiles with proper typing
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("*");
 
       if (profilesError) throw profilesError;
-      if (!profiles) throw new Error('Tidak ada data profil yang ditemukan');
+      if (!profiles) throw new Error("Tidak ada data profil yang ditemukan");
 
       // Cast profiles to Profile[] for type safety
       const typedProfiles = profiles as unknown as Profile[];
@@ -122,97 +130,108 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         console.warn("User roles error:", rolesError);
         // Continue without roles if this fails
       }
-      
+
       // Cast userRoles to UserRole[] for type safety
       const typedUserRoles = (userRoles || []) as unknown as UserRole[];
 
       // Process users with their roles and attendance data
-      const usersWithData = await Promise.all(typedProfiles.map(async (profile) => {
-        try {
-          const userRole = userRoles?.find(r => r.user_id === profile.id);
-          const role = isRole(userRole?.role || 'user') ? userRole.role : 'user';
-          
-          // Get attendance count
-          const { count, error: countError } = await supabase
-            .from("attendance_records")
-            .select("*", { count: 'exact', head: true })
-            .eq("user_id", profile.id);
+      const usersWithData = await Promise.all(
+        typedProfiles.map(async (profile) => {
+          try {
+            const userRole = userRoles?.find((r) => r.user_id === profile.id);
+            const role = isRole(userRole?.role || "user")
+              ? userRole.role
+              : "user";
 
-          if (countError) {
-            console.warn(`Error getting attendance count for user ${profile.id}:`, countError);
+            // Get attendance count
+            const { count, error: countError } = await supabase
+              .from("attendance_records")
+              .select("*", { count: "exact", head: true })
+              .eq("user_id", profile.id);
+
+            if (countError) {
+              console.warn(
+                `Error getting attendance count for user ${profile.id}:`,
+                countError,
+              );
+            }
+
+            // Get last attendance date
+            const { data: lastAttendance, error: lastError } = await supabase
+              .from("attendance_records")
+              .select("date")
+              .eq("user_id", profile.id)
+              .order("date", { ascending: false })
+              .limit(1)
+              .single();
+
+            if (lastError && lastError.code !== "PGRST116") {
+              // Ignore 'No rows found' error
+              console.warn(
+                `Error getting last attendance for user ${profile.id}:`,
+                lastError,
+              );
+            }
+
+            // Build user data with proper typing
+            const userData: UserData = {
+              id: profile.id,
+              user_id: profile.user_id || profile.id,
+              email: profile.email,
+              full_name: profile.full_name || "Nama tidak tersedia",
+              position: profile.position || "Posisi tidak tersedia",
+              department: isDepartment(profile.department)
+                ? profile.department
+                : "Departemen tidak tersedia",
+              employee_id: profile.employee_id || "NIP tidak tersedia",
+              role,
+              total_attendance: count || 0,
+              last_attendance: lastAttendance?.date || null,
+              created_at: profile.created_at,
+              updated_at: profile.updated_at,
+              isEditing: false,
+            };
+
+            return userData;
+          } catch (error) {
+            console.error(`Error processing user ${profile.id}:`, error);
+            // Return minimal user data if processing fails
+            return {
+              id: profile.id,
+              user_id: profile.user_id || profile.id,
+              email: profile.email,
+              full_name: profile.full_name || "Nama tidak tersedia",
+              position: profile.position || "Posisi tidak tersedia",
+              department: isDepartment(profile.department)
+                ? profile.department
+                : "Departemen tidak tersedia",
+              employee_id: profile.employee_id || "NIP tidak tersedia",
+              role: "user",
+              total_attendance: 0,
+              last_attendance: null,
+              created_at: profile.created_at,
+              updated_at: profile.updated_at,
+              isEditing: false,
+            };
           }
-
-          // Get last attendance date
-          const { data: lastAttendance, error: lastError } = await supabase
-            .from("attendance_records")
-            .select("date")
-            .eq("user_id", profile.id)
-            .order("date", { ascending: false })
-            .limit(1)
-            .single();
-
-          if (lastError && lastError.code !== 'PGRST116') { // Ignore 'No rows found' error
-            console.warn(`Error getting last attendance for user ${profile.id}:`, lastError);
-          }
-
-          // Build user data with proper typing
-          const userData: UserData = {
-            id: profile.id,
-            user_id: profile.user_id || profile.id,
-            email: profile.email,
-            full_name: profile.full_name || 'Nama tidak tersedia',
-            position: profile.position || 'Posisi tidak tersedia',
-            department: isDepartment(profile.department) 
-              ? profile.department 
-              : 'Departemen tidak tersedia',
-            employee_id: profile.employee_id || 'NIP tidak tersedia',
-            role,
-            total_attendance: count || 0,
-            last_attendance: lastAttendance?.date || null,
-            created_at: profile.created_at,
-            updated_at: profile.updated_at,
-            isEditing: false
-          };
-
-          return userData;
-        } catch (error) {
-          console.error(`Error processing user ${profile.id}:`, error);
-          // Return minimal user data if processing fails
-          return {
-            id: profile.id,
-            user_id: profile.user_id || profile.id,
-            email: profile.email,
-            full_name: profile.full_name || 'Nama tidak tersedia',
-            position: profile.position || 'Posisi tidak tersedia',
-            department: isDepartment(profile.department) 
-              ? profile.department 
-              : 'Departemen tidak tersedia',
-            employee_id: profile.employee_id || 'NIP tidak tersedia',
-            role: 'user',
-            total_attendance: 0,
-            last_attendance: null,
-            created_at: profile.created_at,
-            updated_at: profile.updated_at,
-            isEditing: false
-          };
-        }
-      }));
+        }),
+      );
 
       setUsers(usersWithData);
-      
+
       toast({
         title: "Berhasil",
-        description: `Data ${usersWithData.length} pengguna berhasil dimuat`
+        description: `Data ${usersWithData.length} pengguna berhasil dimuat`,
       });
-      
     } catch (error) {
       console.error("Error fetching users:", error);
       toast({
         title: "Error",
-        description: error instanceof Error 
-          ? `Gagal memuat data: ${error.message}` 
-          : "Terjadi kesalahan saat memuat data pengguna",
-        variant: "destructive"
+        description:
+          error instanceof Error
+            ? `Gagal memuat data: ${error.message}`
+            : "Terjadi kesalahan saat memuat data pengguna",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -221,98 +240,104 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
 
   // Toggle edit mode for a user
   const toggleEdit = (userId: string) => {
-    setUsers(users.map(user => {
-      if (user.id === userId) {
-        const isEditing = !user.isEditing;
-        return {
-          ...user,
-          isEditing,
-          tempData: isEditing 
-            ? {
-                full_name: user.full_name,
-                position: user.position,
-                department: user.department,
-                employee_id: user.employee_id,
-                role: user.role
-              }
-            : undefined
-        };
-      }
-      return user;
-    }));
+    setUsers(
+      users.map((user) => {
+        if (user.id === userId) {
+          const isEditing = !user.isEditing;
+          return {
+            ...user,
+            isEditing,
+            tempData: isEditing
+              ? {
+                  full_name: user.full_name,
+                  position: user.position,
+                  department: user.department,
+                  employee_id: user.employee_id,
+                  role: user.role,
+                }
+              : undefined,
+          };
+        }
+        return user;
+      }),
+    );
   };
 
   // Handle input changes during edit
   const handleInputChange = (userId: string, field: string, value: string) => {
-    setUsers(users.map(user => {
-      if (user.id === userId && user.tempData) {
-        return {
-          ...user,
-          tempData: {
-            ...user.tempData,
-            [field]: value
-          }
-        };
-      }
-      return user;
-    }));
+    setUsers(
+      users.map((user) => {
+        if (user.id === userId && user.tempData) {
+          return {
+            ...user,
+            tempData: {
+              ...user.tempData,
+              [field]: value,
+            },
+          };
+        }
+        return user;
+      }),
+    );
   };
 
   // Save user data
   const saveUserData = async (userId: string) => {
     try {
-      const user = users.find(u => u.id === userId);
+      const user = users.find((u) => u.id === userId);
       if (!user || !user.tempData) return;
 
       setLoading(true);
 
       // Update profile in profiles table
       const { error: profileError } = await supabase
-        .from('profiles')
+        .from("profiles")
         .update({
           full_name: user.tempData.full_name,
           position: user.tempData.position,
           department: user.tempData.department,
           employee_id: user.tempData.employee_id,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('user_id', user.user_id);
+        .eq("user_id", user.user_id);
 
       if (profileError) throw profileError;
 
       // Update role in user_roles table
       const { error: roleError } = await supabase
-        .from('user_roles')
+        .from("user_roles")
         .upsert(
           { user_id: user.user_id, role: user.tempData.role },
-          { onConflict: 'user_id' }
+          { onConflict: "user_id" },
         );
 
       if (roleError) throw roleError;
 
       // Update local state
-      setUsers(users.map(u => {
-        if (u.id === userId) {
-          return {
-            ...u,
-            ...user.tempData,
-            isEditing: false,
-            tempData: undefined
-          };
-        }
-        return u;
-      }));
+      setUsers(
+        users.map((u) => {
+          if (u.id === userId) {
+            return {
+              ...u,
+              ...user.tempData,
+              isEditing: false,
+              tempData: undefined,
+            };
+          }
+          return u;
+        }),
+      );
 
       toast({
         title: "Berhasil",
-        description: "Profil berhasil diperbarui"
+        description: "Profil berhasil diperbarui",
       });
     } catch (error) {
       console.error("Error updating user:", error);
       toast({
         title: "Error",
         description: "Gagal memperbarui profil. Silakan coba lagi.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -321,31 +346,34 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
 
   // Delete user
   const deleteUser = async (userId: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus pengguna ini?')) return;
-    
+    if (!confirm("Apakah Anda yakin ingin menghapus pengguna ini?")) return;
+
     try {
       setLoading(true);
-      const user = users.find(u => u.id === userId);
+      const user = users.find((u) => u.id === userId);
       if (!user) return;
 
       // Delete from auth.users (requires admin privileges or RLS policy)
-      const { error: authError } = await supabase.auth.admin.deleteUser(user.user_id);
-      
+      const { error: authError } = await supabase.auth.admin.deleteUser(
+        user.user_id,
+      );
+
       if (authError) throw authError;
 
       // Update local state
-      setUsers(users.filter(u => u.id !== userId));
+      setUsers(users.filter((u) => u.id !== userId));
 
       toast({
         title: "Berhasil",
-        description: "Pengguna berhasil dihapus"
+        description: "Pengguna berhasil dihapus",
       });
     } catch (error) {
       console.error("Error deleting user:", error);
       toast({
         title: "Error",
-        description: "Gagal menghapus pengguna. Pastikan Anda memiliki izin yang cukup.",
-        variant: "destructive"
+        description:
+          "Gagal menghapus pengguna. Pastikan Anda memiliki izin yang cukup.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -356,11 +384,12 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
   const exportToExcel = async () => {
     try {
       setLoading(true);
-      
+
       // Get all attendance records with user details
       const { data: attendance, error } = await supabase
-        .from('attendance_records')
-        .select(`
+        .from("attendance_records")
+        .select(
+          `
           *,
           profiles!inner(
             id,
@@ -370,26 +399,27 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
             department,
             employee_id
           )
-        `)
-        .order('clock_in_time', { ascending: false });
+        `,
+        )
+        .order("clock_in_time", { ascending: false });
 
       if (error) throw error;
       if (!attendance || attendance.length === 0) {
         toast({
           title: "Info",
-          description: 'Tidak ada data kehadiran yang ditemukan',
-          variant: "destructive"
+          description: "Tidak ada data kehadiran yang ditemukan",
+          variant: "destructive",
         });
         return;
       }
 
       // Group attendance by user
       const attendanceByUser: Record<string, any[]> = {};
-      
-      attendance.forEach(record => {
+
+      attendance.forEach((record) => {
         const userId = record.user_id;
         if (!userId) return;
-        
+
         if (!attendanceByUser[userId]) {
           attendanceByUser[userId] = [];
         }
@@ -402,63 +432,79 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       // Create a worksheet for each user
       Object.entries(attendanceByUser).forEach(([userId, records]) => {
         if (!records || records.length === 0) return;
-        
+
         const user = records[0]?.profiles;
         if (!user) return;
-        
+
         const userName = user.full_name || `User_${userId}`;
-        
+
         // Format data for Excel with proper date handling
-        const excelData = records.map(record => ({
-          'Tanggal': record.clock_in_time ? format(new Date(record.clock_in_time), 'dd/MM/yyyy', { locale: id }) : '-',
-          'Hari': record.clock_in_time ? format(new Date(record.clock_in_time), 'EEEE', { locale: id }) : '-',
-          'Jam Masuk': record.clock_in_time ? format(new Date(record.clock_in_time), 'HH:mm:ss') : '-',
-          'Jam Keluar': record.clock_out_time ? format(new Date(record.clock_out_time), 'HH:mm:ss') : '-',
-          'Status': record.status || '-',
-          'Keterangan': record.daily_report || '-',
+        const excelData = records.map((record) => ({
+          Tanggal: record.clock_in_time
+            ? format(new Date(record.clock_in_time), "dd/MM/yyyy", {
+                locale: id,
+              })
+            : "-",
+          Hari: record.clock_in_time
+            ? format(new Date(record.clock_in_time), "EEEE", { locale: id })
+            : "-",
+          "Jam Masuk": record.clock_in_time
+            ? format(new Date(record.clock_in_time), "HH:mm:ss")
+            : "-",
+          "Jam Keluar": record.clock_out_time
+            ? format(new Date(record.clock_out_time), "HH:mm:ss")
+            : "-",
+          Status: record.status || "-",
+          Keterangan: record.daily_report || "-",
         }));
 
         // Create worksheet
         const ws = XLSX.utils.json_to_sheet(excelData);
-        
+
         // Add to workbook with sheet name (max 31 chars, Excel limit)
         const sheetName = userName.substring(0, 31);
         XLSX.utils.book_append_sheet(wb, ws, sheetName);
       });
 
       // Generate Excel file with semicolon delimiters for Indonesian locale
-      const excelBuffer = XLSX.write(wb, { 
-        bookType: 'xlsx', 
-        type: 'array',
+      const excelBuffer = XLSX.write(wb, {
+        bookType: "xlsx",
+        type: "array",
         bookSST: true,
         cellDates: true,
         cellStyles: true,
-        sheetStubs: true
+        sheetStubs: true,
       });
-      
+
       // Create blob and download
-      const data = new Blob([excelBuffer], { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      const data = new Blob([excelBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-      
+
       const url = window.URL.createObjectURL(data);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      link.setAttribute('download', `Data_Kehadiran_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+      link.setAttribute(
+        "download",
+        `Data_Kehadiran_${format(new Date(), "yyyy-MM-dd")}.xlsx`,
+      );
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       toast({
         title: "Berhasil",
-        description: 'Data berhasil diekspor ke Excel'
+        description: "Data berhasil diekspor ke Excel",
       });
     } catch (error) {
-      console.error('Error exporting to Excel:', error);
+      console.error("Error exporting to Excel:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : 'Gagal mengekspor data ke Excel',
-        variant: "destructive"
+        description:
+          error instanceof Error
+            ? error.message
+            : "Gagal mengekspor data ke Excel",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -467,8 +513,8 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
   };
 
   // Filter users based on search term
-  const filteredUsers = users.filter(user => 
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = users.filter((user) =>
+    user.full_name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const downloadUserData = async () => {
@@ -476,10 +522,8 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       setDownloading(true);
 
       // Build date filter query
-      let query = supabase
-        .from("attendance_records")
-        .select(
-          `
+      let query = supabase.from("attendance_records").select(
+        `
           id,
           date,
           clock_in_time,
@@ -489,27 +533,30 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
           daily_report,
           user_id
         `,
-        );
+      );
 
       // Apply date filtering based on selected month and year
       if (selectedMonth) {
         // Filter by specific month and year
         const year = parseInt(selectedYear);
         const month = parseInt(selectedMonth);
-        const startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
-        const endDate = new Date(year, month, 0).toISOString().split('T')[0];
-        
-        query = query.gte('date', startDate).lte('date', endDate);
+        const startDate = new Date(year, month - 1, 1)
+          .toISOString()
+          .split("T")[0];
+        const endDate = new Date(year, month, 0).toISOString().split("T")[0];
+
+        query = query.gte("date", startDate).lte("date", endDate);
       } else {
         // Filter by full year
         const year = parseInt(selectedYear);
-        const startDate = new Date(year, 0, 1).toISOString().split('T')[0];
-        const endDate = new Date(year, 11, 31).toISOString().split('T')[0];
-        
-        query = query.gte('date', startDate).lte('date', endDate);
+        const startDate = new Date(year, 0, 1).toISOString().split("T")[0];
+        const endDate = new Date(year, 11, 31).toISOString().split("T")[0];
+
+        query = query.gte("date", startDate).lte("date", endDate);
       }
 
-      const { data: attendanceRecords, error: attendanceError } = await query.order("date", { ascending: false });
+      const { data: attendanceRecords, error: attendanceError } =
+        await query.order("date", { ascending: false });
 
       if (attendanceError) {
         console.error("Supabase error:", attendanceError);
@@ -538,7 +585,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       );
 
       if (!attendanceRecords || attendanceRecords.length === 0) {
-        const periodText = selectedMonth 
+        const periodText = selectedMonth
           ? `bulan ${getMonthName(selectedMonth)} ${selectedYear}`
           : `tahun ${selectedYear}`;
         toast({
@@ -637,7 +684,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       });
 
       // Create period description for summary
-      const periodText = selectedMonth 
+      const periodText = selectedMonth
         ? `${getMonthName(selectedMonth)} ${selectedYear}`
         : `Tahun ${selectedYear}`;
 
@@ -680,7 +727,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       XLSX.utils.book_append_sheet(workbook, summarySheet, "Ringkasan");
 
       // Generate filename based on selected period
-      const filenamePeriod = selectedMonth 
+      const filenamePeriod = selectedMonth
         ? `${getMonthName(selectedMonth)}-${selectedYear}`
         : `${selectedYear}`;
 
@@ -731,8 +778,19 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
   // Helper function to get month name
   const getMonthName = (month: string) => {
     const months = [
-      "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+      "",
+      "Januari",
+      "Februari",
+      "Maret",
+      "April",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agustus",
+      "September",
+      "Oktober",
+      "November",
+      "Desember",
     ];
     return months[parseInt(month)] || month;
   };
@@ -747,8 +805,8 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
             <div className="flex justify-between items-center">
               <CardTitle className="text-2xl font-bold">Panel Admin</CardTitle>
               <div className="flex space-x-2">
-                <Button 
-                  onClick={downloadUserData} 
+                <Button
+                  onClick={downloadUserData}
                   disabled={downloading || users.length === 0}
                   variant="outline"
                   className="gap-2"
@@ -788,7 +846,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                     <SelectValue placeholder="Tahun" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.from({length: 5}, (_, i) => {
+                    {Array.from({ length: 5 }, (_, i) => {
                       const year = new Date().getFullYear() - i;
                       return (
                         <SelectItem key={year} value={year.toString()}>
@@ -833,13 +891,25 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
           ) : filteredUsers.length === 0 ? (
             <div className="text-center py-12">
               <div className="mx-auto h-12 w-12 text-gray-400">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0111.317-2.5M19 21v-1a6 6 0 00-4-5.659M16 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0111.317-2.5M19 21v-1a6 6 0 00-4-5.659M16 7a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
                 </svg>
               </div>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Tidak ada data pengguna</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                Tidak ada data pengguna
+              </h3>
               <p className="mt-1 text-sm text-gray-500">
-                {searchTerm ? 'Coba kata kunci lain' : 'Data belum tersedia'}
+                {searchTerm ? "Coba kata kunci lain" : "Data belum tersedia"}
               </p>
             </div>
           ) : (
@@ -847,14 +917,23 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Nama
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Role
                     </th>
-                    <th scope="col" className="relative px-6 py-3">
-                      <span className="sr-only">Aksi</span>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Aksi
                     </th>
                   </tr>
                 </thead>
@@ -865,17 +944,35 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                         {user.full_name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.role === "admin" ? "Admin" : "User"}
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            user.role === "admin"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {user.role === "admin" ? "Admin" : "User"}
+                        </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm" className="gap-1">
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                        <div className="flex justify-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                            onClick={() => toggleEdit(user.id)}
+                          >
                             <Pencil className="h-4 w-4" />
-                            <span>Edit</span>
+                            Edit
                           </Button>
-                          <Button variant="destructive" size="sm" className="gap-1">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="gap-2 bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+                            onClick={() => deleteUser(user.id)}
+                          >
                             <Trash className="h-4 w-4" />
-                            <span>Hapus</span>
+                            Hapus
                           </Button>
                         </div>
                       </td>
