@@ -806,7 +806,9 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         <CardHeader className="border-b p-4">
           <div className="flex flex-col space-y-4">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-xl md:text-2xl font-bold">Panel Admin</CardTitle>
+              <CardTitle className="text-xl md:text-2xl font-bold">
+                Panel Admin
+              </CardTitle>
               <Button variant="ghost" size="icon" onClick={onClose}>
                 <X className="h-5 w-5" />
               </Button>
@@ -816,7 +818,6 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
             <div className="space-y-4">
               {/* Period Selection Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex gap-4 flex-1">
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium text-gray-700">
                     Periode Rekap:
@@ -825,7 +826,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                     value={selectedMonth}
                     onValueChange={setSelectedMonth}
                   >
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Pilih Bulan" />
                     </SelectTrigger>
                     <SelectContent>
