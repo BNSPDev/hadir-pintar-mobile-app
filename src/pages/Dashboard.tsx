@@ -365,9 +365,12 @@ export default function Dashboard() {
                   Laporkan Kegiatan Hari Ini
                 </h3>
                 <p className="text-sm text-muted-foreground font-medium leading-relaxed">
-                  {todayRecord?.daily_report && todayRecord.daily_report.trim()
-                    ? "✅ Laporan sudah terisi. Klik untuk melihat atau edit."
-                    : "Jangan lupa untuk selalu melaporkan pekerjaanmu setiap harian."}
+                  {todayRecord?.clock_out_time
+                    ? "📝 Laporan kegiatan telah tersimpan dan tidak dapat diubah."
+                    : todayRecord?.daily_report &&
+                        todayRecord.daily_report.trim()
+                      ? "✅ Laporan sudah terisi. Klik untuk melihat atau edit."
+                      : "Jangan lupa untuk selalu melaporkan pekerjaanmu setiap harian."}
                 </p>
               </div>
               <div
