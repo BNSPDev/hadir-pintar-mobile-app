@@ -125,6 +125,17 @@ export default function Dashboard() {
     }
   };
 
+  const handleClockOutClick = async () => {
+    // Check if daily report already exists
+    if (todayRecord?.daily_report && todayRecord.daily_report.trim()) {
+      // If report already exists, clock out directly without modal
+      await handleClockOut(todayRecord.daily_report);
+    } else {
+      // If no report exists, show modal to fill report
+      setShowClockOutModal(true);
+    }
+  };
+
   const handleClockOut = async (report: string) => {
     setLoading(true);
     try {
