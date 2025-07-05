@@ -114,6 +114,11 @@ export function ActivityReportModal({
 
       setNewReport("");
       fetchReports();
+
+      // Call callback to refresh dashboard
+      if (onReportSaved) {
+        onReportSaved();
+      }
     } catch (error: any) {
       toast({
         title: "Gagal",
