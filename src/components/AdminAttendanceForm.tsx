@@ -112,7 +112,7 @@ export function AdminAttendanceForm() {
         .select(
           `
           *,
-          profiles!attendance_records_user_id_fkey (
+          profiles (
             full_name,
             position,
             department
@@ -123,10 +123,10 @@ export function AdminAttendanceForm() {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Error fetching today's attendance:", error);
+        console.error("Error fetching today's attendance:", error.message);
         toast({
           title: "Error",
-          description: "Gagal memuat data presensi hari ini",
+          description: `Gagal memuat data presensi: ${error.message}`,
           variant: "destructive",
         });
         return;
@@ -134,10 +134,10 @@ export function AdminAttendanceForm() {
 
       setTodayAttendance(data || []);
     } catch (error: any) {
-      console.error("Error fetching today's attendance:", error);
+      console.error("Error fetching today's attendance:", error.message);
       toast({
         title: "Error",
-        description: "Gagal memuat data presensi hari ini",
+        description: `Gagal memuat data presensi: ${error.message || "Unknown error"}`,
         variant: "destructive",
       });
     }
