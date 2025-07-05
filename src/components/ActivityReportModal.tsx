@@ -177,28 +177,20 @@ export function ActivityReportModal({
         </CardHeader>
 
         <CardContent className="flex-1 flex flex-col">
-          {/* Add New Report */}
+          {/* Today's Report */}
           <div className="space-y-4 mb-6">
             <div>
               <label className="text-sm font-medium text-card-foreground mb-2 block">
-                Tanggal
+                Laporan Kegiatan Hari Ini
               </label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full p-2 rounded-md bg-input border border-border text-foreground"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-card-foreground mb-2 block">
-                Laporan Kegiatan
-              </label>
+              <p className="text-xs text-muted-foreground mb-2">
+                {format(new Date(), "EEEE, dd MMMM yyyy", { locale: id })}
+              </p>
               <Textarea
                 value={newReport}
                 onChange={(e) => setNewReport(e.target.value)}
                 placeholder="Tuliskan kegiatan yang telah dilakukan hari ini..."
-                className="min-h-[100px] bg-input border-border text-foreground placeholder:text-muted-foreground"
+                className="min-h-[120px] bg-input border-border text-foreground placeholder:text-muted-foreground"
               />
             </div>
             <Button
@@ -207,8 +199,18 @@ export function ActivityReportModal({
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               <Plus className="w-4 h-4 mr-2" />
-              {loading ? "Menyimpan..." : "Simpan Laporan"}
+              {loading
+                ? "Menyimpan..."
+                : todayReport
+                  ? "Update Laporan"
+                  : "Simpan Laporan"}
             </Button>
+            {todayReport && (
+              <p className="text-xs text-success text-center">
+                ✅ Laporan hari ini sudah tersimpan. Saat absen pulang tidak
+                perlu mengisi laporan lagi.
+              </p>
+            )}
           </div>
 
           {/* Reports History */}
