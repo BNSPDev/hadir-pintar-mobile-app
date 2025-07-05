@@ -86,18 +86,27 @@ export function AdminAttendanceForm() {
   const fetchUsers = async () => {
     try {
       setLoadingUsers(true);
+      console.log("Fetching users as admin...");
+
       const { data, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, user_id, full_name, position, department, employee_id")
         .order("full_name");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error fetching users:", error);
+        throw new Error(
+          `Database error: ${error.message} (Code: ${error.code})`,
+        );
+      }
+
+      console.log("Users fetched successfully:", data?.length || 0);
       setUsers(data || []);
     } catch (error: any) {
       console.error("Error fetching users:", error);
       toast({
         title: "Error",
-        description: "Gagal memuat daftar user",
+        description: `Gagal memuat daftar user: ${error.message || "Unknown error"}`,
         variant: "destructive",
       });
     } finally {
