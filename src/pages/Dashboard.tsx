@@ -347,8 +347,16 @@ export default function Dashboard() {
 
         {/* Today's Activity Report */}
         <Card
-          className="shadow-card border border-border bg-gradient-card cursor-pointer hover:bg-muted/20 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] backdrop-blur-sm"
-          onClick={() => setShowActivityModal(true)}
+          className={`shadow-card border border-border bg-gradient-card transition-all duration-300 backdrop-blur-sm ${
+            todayRecord?.clock_out_time
+              ? "opacity-60 cursor-not-allowed"
+              : "cursor-pointer hover:bg-muted/20 hover:shadow-lg hover:scale-[1.01]"
+          }`}
+          onClick={() => {
+            if (!todayRecord?.clock_out_time) {
+              setShowActivityModal(true);
+            }
+          }}
         >
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
