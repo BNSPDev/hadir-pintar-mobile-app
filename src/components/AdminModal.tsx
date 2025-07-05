@@ -804,20 +804,9 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
           <div className="flex flex-col space-y-4">
             <div className="flex justify-between items-center">
               <CardTitle className="text-2xl font-bold">Panel Admin</CardTitle>
-              <div className="flex space-x-2">
-                <Button
-                  onClick={downloadUserData}
-                  disabled={downloading || users.length === 0}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  <span className="hidden sm:inline">Export Excel</span>
-                </Button>
-                <Button variant="ghost" size="icon" onClick={onClose}>
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
+              <Button variant="ghost" size="icon" onClick={onClose}>
+                <X className="h-5 w-5" />
+              </Button>
             </div>
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex gap-4 flex-1">
