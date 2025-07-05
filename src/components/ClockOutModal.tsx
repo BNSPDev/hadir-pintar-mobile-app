@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { X } from 'lucide-react';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { validateDailyReport } from "@/utils/validation";
+import { X } from "lucide-react";
 
 interface ClockOutModalProps {
   isOpen: boolean;
@@ -11,8 +12,13 @@ interface ClockOutModalProps {
   loading: boolean;
 }
 
-export function ClockOutModal({ isOpen, onClose, onSubmit, loading }: ClockOutModalProps) {
-  const [report, setReport] = useState('');
+export function ClockOutModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  loading,
+}: ClockOutModalProps) {
+  const [report, setReport] = useState("");
 
   if (!isOpen) return null;
 
@@ -20,7 +26,7 @@ export function ClockOutModal({ isOpen, onClose, onSubmit, loading }: ClockOutMo
     e.preventDefault();
     if (report.trim()) {
       onSubmit(report.trim());
-      setReport('');
+      setReport("");
     }
   };
 
@@ -39,12 +45,13 @@ export function ClockOutModal({ isOpen, onClose, onSubmit, loading }: ClockOutMo
             <X className="w-4 h-4" />
           </Button>
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <p className="text-sm text-muted-foreground mb-3">
-                Silakan tuliskan ringkasan kegiatan yang telah Anda lakukan hari ini:
+                Silakan tuliskan ringkasan kegiatan yang telah Anda lakukan hari
+                ini:
               </p>
               <Textarea
                 value={report}
@@ -54,7 +61,7 @@ export function ClockOutModal({ isOpen, onClose, onSubmit, loading }: ClockOutMo
                 required
               />
             </div>
-            
+
             <div className="flex gap-2">
               <Button
                 type="button"
@@ -70,7 +77,7 @@ export function ClockOutModal({ isOpen, onClose, onSubmit, loading }: ClockOutMo
                 disabled={loading || !report.trim()}
                 className="flex-1"
               >
-                {loading ? 'Menyimpan...' : 'Absen Pulang'}
+                {loading ? "Menyimpan..." : "Absen Pulang"}
               </Button>
             </div>
           </form>
