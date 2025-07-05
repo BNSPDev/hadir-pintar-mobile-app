@@ -874,7 +874,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                     <Download className="h-4 w-4" />
                     {downloading
                       ? "Mengunduh..."
-                      : `Excel ${selectedMonth ? getMonthName(selectedMonth) : "Tahunan"} ${selectedYear}`}
+                      : `Excel ${selectedMonth && selectedMonth !== "all" ? getMonthName(selectedMonth) : "Tahunan"} ${selectedYear}`}
                   </Button>
                 </div>
               </div>
