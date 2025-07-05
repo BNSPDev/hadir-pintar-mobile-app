@@ -62,22 +62,21 @@ export default function Login() {
     <div className="min-h-screen bg-background">
       <MobileHeader title="Masuk ke Akun" showTime={false} />
 
-      <div className="p-4 pt-8">
-        <Card className="w-full max-w-md mx-auto shadow-card border-border bg-gradient-card backdrop-blur-sm">
-          <CardHeader className="text-center pb-6">
+      <div className="p-4 pt-8 pb-8">
+        <Card className="w-full max-w-md mx-auto shadow-lg border-border bg-card">
+          <CardHeader className="text-center pb-6 px-6 pt-8">
             <div className="flex justify-center mb-6">
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-secondary rounded-2xl blur-sm opacity-20"></div>
-                <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl p-3 shadow-soft">
+                <div className="relative bg-primary/5 rounded-2xl p-4 shadow-sm border border-primary/10">
                   <img
                     src="https://cdn.builder.io/api/v1/image/assets%2Fda75669088f743d3b0d001a5b0efe69b%2F0b024383d832423f81e5d60abdb3f7b0?format=webp&width=800"
                     alt="BNSP Logo"
-                    className="w-12 h-12 object-contain"
+                    className="w-16 h-16 object-contain"
                   />
                 </div>
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-card-foreground mb-2">
+            <CardTitle className="text-2xl font-bold text-card-foreground mb-3">
               E-Presensi Anggota BNSP
             </CardTitle>
             <p className="text-sm text-muted-foreground font-medium">
@@ -85,7 +84,7 @@ export default function Login() {
             </p>
           </CardHeader>
 
-          <CardContent>
+          <CardContent className="px-6 pb-8">
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-3">
                 <Label
@@ -101,7 +100,7 @@ export default function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Masukkan email"
                   required
-                  className="h-12 bg-input border-border text-foreground placeholder:text-muted-foreground transition-all duration-200 hover:border-secondary/50 focus:border-secondary focus:ring-2 focus:ring-secondary/20"
+                  className="h-12 bg-background border-2 border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
 
@@ -119,14 +118,14 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan password"
                   required
-                  className="h-12 bg-input border-border text-foreground placeholder:text-muted-foreground transition-all duration-200 hover:border-secondary/50 focus:border-secondary focus:ring-2 focus:ring-secondary/20"
+                  className="h-12 bg-background border-2 border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
 
               <Button
                 type="submit"
                 size="lg"
-                className="w-full font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+                className="w-full font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md mt-8"
                 disabled={loading}
               >
                 {loading ? (
