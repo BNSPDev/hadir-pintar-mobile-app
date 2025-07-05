@@ -428,6 +428,7 @@ export default function Dashboard() {
         <ActivityReportModal
           isOpen={showActivityModal}
           onClose={() => setShowActivityModal(false)}
+          onReportSaved={fetchTodayAttendance}
         />
       </div>
       <BottomNav />
