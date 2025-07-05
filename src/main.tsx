@@ -2,7 +2,6 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import { startHealthMonitoring } from "./utils/healthCheck";
 import { isDevelopment } from "./utils/env";
 
 // Start health monitoring in production
