@@ -66,6 +66,8 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
   const [loading, setLoading] = useState<boolean>(false);
   const [downloading, setDownloading] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
   
   // Available departments
   const departments = [
@@ -466,17 +468,15 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
 
   // Filter users based on search term
   const filteredUsers = users.filter(user => 
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.employee_id.includes(searchTerm) ||
-    user.department.toLowerCase().includes(searchTerm.toLowerCase())
+    user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const downloadUserData = async () => {
     try {
       setDownloading(true);
 
-      // Get attendance records first
-      const { data: attendanceRecords, error: attendanceError } = await supabase
+      // Build date filter query
+      let query = supabase
         .from("attendance_records")
         .select(
           `
@@ -489,8 +489,27 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
           daily_report,
           user_id
         `,
-        )
-        .order("date", { ascending: false });
+        );
+
+      // Apply date filtering based on selected month and year
+      if (selectedMonth) {
+        // Filter by specific month and year
+        const year = parseInt(selectedYear);
+        const month = parseInt(selectedMonth);
+        const startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
+        const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+        
+        query = query.gte('date', startDate).lte('date', endDate);
+      } else {
+        // Filter by full year
+        const year = parseInt(selectedYear);
+        const startDate = new Date(year, 0, 1).toISOString().split('T')[0];
+        const endDate = new Date(year, 11, 31).toISOString().split('T')[0];
+        
+        query = query.gte('date', startDate).lte('date', endDate);
+      }
+
+      const { data: attendanceRecords, error: attendanceError } = await query.order("date", { ascending: false });
 
       if (attendanceError) {
         console.error("Supabase error:", attendanceError);
@@ -519,9 +538,12 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       );
 
       if (!attendanceRecords || attendanceRecords.length === 0) {
+        const periodText = selectedMonth 
+          ? `bulan ${getMonthName(selectedMonth)} ${selectedYear}`
+          : `tahun ${selectedYear}`;
         toast({
           title: "Informasi",
-          description: "Tidak ada data presensi untuk diunduh",
+          description: `Tidak ada data presensi untuk ${periodText}`,
           variant: "default",
         });
         return;
@@ -614,10 +636,16 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
       });
 
+      // Create period description for summary
+      const periodText = selectedMonth 
+        ? `${getMonthName(selectedMonth)} ${selectedYear}`
+        : `Tahun ${selectedYear}`;
+
       // Also create a summary sheet
       const summaryData = [
-        ["Ringkasan Presensi BNSP", "", "", "", ""],
+        [`Ringkasan Presensi BNSP - ${periodText}`, "", "", "", ""],
         ["Tanggal Download:", format(new Date(), "dd/MM/yyyy HH:mm")],
+        ["Period:", periodText],
         ["Total Pengguna:", recordsByUser.size],
         ["Total Record:", attendanceRecords.length],
         [""],
@@ -651,6 +679,11 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       // Insert summary sheet at the beginning
       XLSX.utils.book_append_sheet(workbook, summarySheet, "Ringkasan");
 
+      // Generate filename based on selected period
+      const filenamePeriod = selectedMonth 
+        ? `${getMonthName(selectedMonth)}-${selectedYear}`
+        : `${selectedYear}`;
+
       // Generate Excel file
       const excelBuffer = XLSX.write(workbook, {
         bookType: "xlsx",
@@ -668,7 +701,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       link.setAttribute("href", url);
       link.setAttribute(
         "download",
-        `rekap-presensi-bnsp-${format(new Date(), "yyyy-MM-dd")}.xlsx`,
+        `rekap-presensi-bnsp-${filenamePeriod}.xlsx`,
       );
       link.style.visibility = "hidden";
       document.body.appendChild(link);
@@ -680,7 +713,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
 
       toast({
         title: "Berhasil",
-        description: `File Excel dengan ${recordsByUser.size} sheet pengguna berhasil diunduh`,
+        description: `File Excel untuk ${periodText} dengan ${recordsByUser.size} sheet pengguna berhasil diunduh`,
       });
     } catch (error: any) {
       console.error("Error downloading data:", error);
@@ -693,6 +726,15 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     } finally {
       setDownloading(false);
     }
+  };
+
+  // Helper function to get month name
+  const getMonthName = (month: string) => {
+    const months = [
+      "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ];
+    return months[parseInt(month)] || month;
   };
 
   if (!isOpen) return null;
@@ -719,10 +761,49 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                 </Button>
               </div>
             </div>
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex gap-4 flex-1">
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Pilih Bulan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Satu Tahun Penuh</SelectItem>
+                    <SelectItem value="1">Januari</SelectItem>
+                    <SelectItem value="2">Februari</SelectItem>
+                    <SelectItem value="3">Maret</SelectItem>
+                    <SelectItem value="4">April</SelectItem>
+                    <SelectItem value="5">Mei</SelectItem>
+                    <SelectItem value="6">Juni</SelectItem>
+                    <SelectItem value="7">Juli</SelectItem>
+                    <SelectItem value="8">Agustus</SelectItem>
+                    <SelectItem value="9">September</SelectItem>
+                    <SelectItem value="10">Oktober</SelectItem>
+                    <SelectItem value="11">November</SelectItem>
+                    <SelectItem value="12">Desember</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Tahun" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({length: 5}, (_, i) => {
+                      const year = new Date().getFullYear() - i;
+                      return (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="relative">
               <Input
                 type="text"
-                placeholder="Cari berdasarkan nama, NIP, atau unit kerja..."
+                placeholder="Cari berdasarkan nama..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 w-full"
@@ -770,15 +851,6 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                       Nama
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      NIP
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Unit Kerja
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Jabatan
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Role
                     </th>
                     <th scope="col" className="relative px-6 py-3">
@@ -793,24 +865,17 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                         {user.full_name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.employee_id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.department}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.position}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {user.role === "admin" ? "Admin" : "User"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex space-x-2">
-                          <Button variant="ghost" size="icon">
-                            <Pencil className="h-5 w-5" />
+                          <Button variant="outline" size="sm" className="gap-1">
+                            <Pencil className="h-4 w-4" />
+                            <span>Edit</span>
                           </Button>
-                          <Button variant="ghost" size="icon">
-                            <Trash className="h-5 w-5" />
+                          <Button variant="destructive" size="sm" className="gap-1">
+                            <Trash className="h-4 w-4" />
+                            <span>Hapus</span>
                           </Button>
                         </div>
                       </td>
