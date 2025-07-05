@@ -822,7 +822,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                       <SelectValue placeholder="Pilih Bulan" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Satu Tahun Penuh</SelectItem>
+                      <SelectItem value="all">Satu Tahun Penuh</SelectItem>
                       <SelectItem value="1">Januari</SelectItem>
                       <SelectItem value="2">Februari</SelectItem>
                       <SelectItem value="3">Maret</SelectItem>
