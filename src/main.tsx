@@ -4,9 +4,21 @@ import App from "./App.tsx";
 import "./index.css";
 import { isDevelopment } from "./utils/env";
 
-// Start health monitoring in production
-if (!isDevelopment()) {
-  startHealthMonitoring();
+// Register Service Worker for offline support
+if ("serviceWorker" in navigator && !isDevelopment()) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then((registration) => {
+        console.log(
+          "Service Worker registered successfully:",
+          registration.scope,
+        );
+      })
+      .catch((error) => {
+        console.log("Service Worker registration failed:", error);
+      });
+  });
 }
 
 // Enhanced error handling
