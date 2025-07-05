@@ -198,7 +198,7 @@ export default function Dashboard() {
   const timeString = format(currentTime, "HH:mm:ss");
 
   return (
-    <div className="min-h-screen pb-24 bg-background">
+    <div className="min-h-screen pb-32 sm:pb-24 bg-background">
       <MobileHeader title={profile?.full_name || "User"} />
       <div className="p-4 space-y-6 mt-4">
         {/* User Profile Card */}
