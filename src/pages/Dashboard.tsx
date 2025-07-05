@@ -375,13 +375,18 @@ export default function Dashboard() {
               </div>
               <div
                 className={`rounded-full p-2 ${
-                  todayRecord?.daily_report && todayRecord.daily_report.trim()
-                    ? "bg-success/10"
-                    : "bg-accent/10"
+                  todayRecord?.clock_out_time
+                    ? "bg-muted"
+                    : todayRecord?.daily_report &&
+                        todayRecord.daily_report.trim()
+                      ? "bg-success/10"
+                      : "bg-accent/10"
                 }`}
               >
-                {todayRecord?.daily_report &&
-                todayRecord.daily_report.trim() ? (
+                {todayRecord?.clock_out_time ? (
+                  <CheckCircle className="w-6 h-6 text-muted-foreground" />
+                ) : todayRecord?.daily_report &&
+                  todayRecord.daily_report.trim() ? (
                   <CheckCircle className="w-6 h-6 text-success" />
                 ) : (
                   <ChevronRight className="w-6 h-6 text-accent" />
