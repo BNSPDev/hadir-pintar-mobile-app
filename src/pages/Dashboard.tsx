@@ -177,7 +177,7 @@ export default function Dashboard() {
     }
   };
 
-  if (authLoading || profileLoading) {
+  if (authLoading || profileLoading || roleLoading) {
     return <LoadingSpinner fullScreen message="Memuat dashboard..." />;
   }
 
