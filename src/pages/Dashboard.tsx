@@ -48,6 +48,7 @@ interface AttendanceRecord {
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
+  const { userRole, isAdmin, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
