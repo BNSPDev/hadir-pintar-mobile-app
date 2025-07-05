@@ -801,17 +801,21 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-      <Card className="w-full max-w-6xl max-h-[90vh] flex flex-col">
-        <CardHeader className="border-b">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black bg-opacity-50">
+      <Card className="w-full max-w-6xl max-h-[95vh] flex flex-col mx-2">
+        <CardHeader className="border-b p-4">
           <div className="flex flex-col space-y-4">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-2xl font-bold">Panel Admin</CardTitle>
+              <CardTitle className="text-xl md:text-2xl font-bold">Panel Admin</CardTitle>
               <Button variant="ghost" size="icon" onClick={onClose}>
                 <X className="h-5 w-5" />
               </Button>
             </div>
-            <div className="flex flex-col md:flex-row gap-4">
+
+            {/* Mobile-first responsive layout */}
+            <div className="space-y-4">
+              {/* Period Selection Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex gap-4 flex-1">
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium text-gray-700">
