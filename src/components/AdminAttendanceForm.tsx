@@ -168,13 +168,16 @@ export function AdminAttendanceForm() {
         .order("created_at", { ascending: false });
 
       if (attendanceError) {
-        console.error(
-          "Supabase error fetching attendance records:",
-          attendanceError,
-        );
+        console.error("Supabase error fetching attendance records:", {
+          message: attendanceError.message,
+          code: attendanceError.code,
+          details: attendanceError.details,
+          hint: attendanceError.hint,
+          full: attendanceError,
+        });
         toast({
           title: "Error",
-          description: `Gagal memuat data presensi: ${attendanceError.message} (Code: ${attendanceError.code})`,
+          description: `Gagal memuat data presensi: ${attendanceError.message || JSON.stringify(attendanceError)}`,
           variant: "destructive",
         });
         return;
