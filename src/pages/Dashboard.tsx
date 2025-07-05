@@ -286,8 +286,8 @@ export default function Dashboard() {
 
         {/* Work Type Selector Modal */}
         {showWorkTypeSelector && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-white/20">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-border">
               <h3 className="font-bold text-xl mb-6 text-center text-foreground">
                 Pilih Tipe Kerja
               </h3>
@@ -298,12 +298,14 @@ export default function Dashboard() {
                     <Button
                       key={option.type}
                       onClick={() => handleClockIn(option.type)}
-                      className={`h-24 ${option.color} hover:scale-[1.05] hover:shadow-lg text-white font-bold transition-all duration-200 border border-white/20`}
+                      className={`h-24 ${option.color} hover:opacity-90 text-white font-bold border-2 border-white/30 shadow-md`}
                       disabled={loading}
                     >
                       <div className="text-center">
-                        <Icon className="w-7 h-7 mx-auto mb-2" />
-                        <span className="text-base">{option.label}</span>
+                        <Icon className="w-8 h-8 mx-auto mb-2" />
+                        <span className="text-base font-bold">
+                          {option.label}
+                        </span>
                       </div>
                     </Button>
                   );
@@ -312,7 +314,8 @@ export default function Dashboard() {
               <Button
                 variant="outline"
                 onClick={() => setShowWorkTypeSelector(false)}
-                className="w-full mt-6 h-12 font-semibold border-2 hover:bg-muted"
+                size="lg"
+                className="w-full mt-6 font-bold text-foreground"
                 disabled={loading}
               >
                 Batal
