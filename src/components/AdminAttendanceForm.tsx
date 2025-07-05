@@ -144,7 +144,12 @@ export function AdminAttendanceForm() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedUser || !workType) {
+    if (
+      !selectedUser ||
+      !workType ||
+      selectedUser === "loading" ||
+      selectedUser === "no-users"
+    ) {
       toast({
         title: "Error",
         description: "Harap pilih user dan tipe kerja",
