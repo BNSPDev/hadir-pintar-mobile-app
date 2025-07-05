@@ -121,13 +121,13 @@ export function ActivityReportModal({
 
         if (error) throw error;
       } else {
-        // Create new record
+        // Create new record without clock_out_time (report only)
         const { error } = await supabase.from("attendance_records").insert({
           user_id: user?.id,
           date: selectedDate,
           daily_report: newReport.trim(),
           work_type: "WFO",
-          status: "completed",
+          status: "report_only", // Special status for report-only records
         });
 
         if (error) throw error;
