@@ -145,11 +145,21 @@ export default function Login() {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (emailError) setEmailError("");
+                  }}
                   placeholder="Masukkan email"
                   required
-                  className="h-12 bg-background border-2 border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className={`h-12 bg-background border-2 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20 ${
+                    emailError
+                      ? "border-destructive focus:border-destructive"
+                      : "border-border focus:border-primary"
+                  }`}
                 />
+                {emailError && (
+                  <p className="text-sm text-destructive mt-1">{emailError}</p>
+                )}
               </div>
 
               <div className="space-y-3">
