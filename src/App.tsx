@@ -84,6 +84,7 @@ const App: React.FC = () => {
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <NetworkStatus />
             <BrowserRouter>
               <AppRoutes />
             </BrowserRouter>
