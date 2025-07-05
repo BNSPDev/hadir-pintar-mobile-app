@@ -90,7 +90,7 @@ export function ClockOutModal({
               <Button
                 type="button"
                 variant="outline"
-                onClick={onClose}
+                onClick={handleClose}
                 disabled={loading}
                 className="flex-1"
               >
