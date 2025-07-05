@@ -128,28 +128,57 @@ export function AdminAttendanceForm() {
   const fetchUsers = async () => {
     try {
       setLoadingUsers(true);
-      console.log("Fetching users as admin...");
+      console.log("Fetching non-admin users...");
 
-      const { data, error } = await supabase
+      // First get all profiles
+      const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select("id, user_id, full_name, position, department, employee_id")
         .order("full_name");
 
-      if (error) {
+      if (profilesError) {
         console.error("Supabase error fetching users:", {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
-          full: error,
+          message: profilesError.message,
+          code: profilesError.code,
+          details: profilesError.details,
+          hint: profilesError.hint,
+          full: profilesError,
         });
         throw new Error(
-          `Database error: ${error.message || JSON.stringify(error)}`,
+          `Database error: ${profilesError.message || JSON.stringify(profilesError)}`,
         );
       }
 
-      console.log("Users fetched successfully:", data?.length || 0);
-      setUsers(data || []);
+      // Get admin user IDs to filter them out
+      const { data: adminRoles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+
+      if (rolesError) {
+        console.warn(
+          "Warning: Could not fetch admin roles, showing all users:",
+          rolesError,
+        );
+        // If we can't get admin roles, show all users as fallback
+        setUsers(profilesData || []);
+        return;
+      }
+
+      // Filter out admin users
+      const adminUserIds = new Set(
+        adminRoles?.map((role) => role.user_id) || [],
+      );
+      const nonAdminUsers = (profilesData || []).filter(
+        (user) => !adminUserIds.has(user.user_id),
+      );
+
+      console.log(
+        "Non-admin users fetched successfully:",
+        nonAdminUsers.length,
+      );
+      console.log("Filtered out admin users:", adminUserIds.size);
+      setUsers(nonAdminUsers);
     } catch (error: any) {
       console.error("Error fetching users:", error);
       toast({
