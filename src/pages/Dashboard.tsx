@@ -248,23 +248,23 @@ export default function Dashboard() {
           {!todayRecord?.clock_in_time ? (
             <Button
               onClick={() => setShowWorkTypeSelector(true)}
-              className="h-24 bg-gradient-secondary hover:shadow-card hover:scale-[1.02] text-white font-bold text-lg border border-secondary/20 shadow-soft"
+              className="h-24 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-bold text-lg border-2 border-secondary/30 shadow-md"
               disabled={loading}
             >
               <div className="text-center">
-                <Clock className="w-7 h-7 mx-auto mb-2" />
-                <span className="text-base">Masuk</span>
+                <Clock className="w-8 h-8 mx-auto mb-2" />
+                <span className="text-base font-bold">Masuk</span>
               </div>
             </Button>
           ) : (
             <Button
               disabled
-              className="h-24 bg-gradient-to-br from-success to-success/80 text-success-foreground font-bold text-lg shadow-soft border border-success/20"
+              className="h-24 bg-success text-success-foreground font-bold text-lg shadow-md border-2 border-success/30"
             >
               <div className="text-center">
-                <CheckCircle className="w-7 h-7 mx-auto mb-2" />
-                <div className="text-xs font-semibold">
-                  {format(new Date(todayRecord.clock_in_time), "HH:mm")}
+                <CheckCircle className="w-8 h-8 mx-auto mb-2" />
+                <div className="text-sm font-bold">
+                  Masuk: {format(new Date(todayRecord.clock_in_time), "HH:mm")}
                 </div>
               </div>
             </Button>
@@ -275,11 +275,11 @@ export default function Dashboard() {
             disabled={
               !todayRecord?.clock_in_time || !!todayRecord?.clock_out_time
             }
-            className="h-24 bg-gradient-accent hover:shadow-card hover:scale-[1.02] text-accent-foreground font-bold text-lg disabled:opacity-50 border border-accent/20 shadow-soft"
+            className="h-24 bg-accent text-accent-foreground hover:bg-accent/90 font-bold text-lg disabled:opacity-50 disabled:bg-muted disabled:text-muted-foreground border-2 border-accent/30 shadow-md"
           >
             <div className="text-center">
-              <Clock className="w-7 h-7 mx-auto mb-2" />
-              <span className="text-base">Pulang</span>
+              <Clock className="w-8 h-8 mx-auto mb-2" />
+              <span className="text-base font-bold">Pulang</span>
             </div>
           </Button>
         </div>
