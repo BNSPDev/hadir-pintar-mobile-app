@@ -357,7 +357,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       
       // Get all attendance records with user details
       const { data: attendance, error } = await supabase
-        .from('attendance')
+        .from('attendance_records')
         .select(`
           *,
           profiles!inner(
@@ -369,11 +369,15 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
             employee_id
           )
         `)
-        .order('clock_in', { ascending: false });
+        .order('clock_in_time', { ascending: false });
 
       if (error) throw error;
       if (!attendance || attendance.length === 0) {
-        toast.error('Tidak ada data kehadiran yang ditemukan');
+        toast({
+          title: "Info",
+          description: 'Tidak ada data kehadiran yang ditemukan',
+          variant: "destructive"
+        });
         return;
       }
 
@@ -404,14 +408,12 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         
         // Format data for Excel with proper date handling
         const excelData = records.map(record => ({
-          'Tanggal': record.clock_in ? format(new Date(record.clock_in), 'dd/MM/yyyy', { locale: id }) : '-',
-          'Hari': record.clock_in ? format(new Date(record.clock_in), 'EEEE', { locale: id }) : '-',
-          'Jam Masuk': record.clock_in ? format(new Date(record.clock_in), 'HH:mm:ss') : '-',
-          'Lokasi Masuk': record.clock_in_location || '-',
-          'Jam Keluar': record.clock_out ? format(new Date(record.clock_out), 'HH:mm:ss') : '-',
-          'Lokasi Keluar': record.clock_out_location || '-',
+          'Tanggal': record.clock_in_time ? format(new Date(record.clock_in_time), 'dd/MM/yyyy', { locale: id }) : '-',
+          'Hari': record.clock_in_time ? format(new Date(record.clock_in_time), 'EEEE', { locale: id }) : '-',
+          'Jam Masuk': record.clock_in_time ? format(new Date(record.clock_in_time), 'HH:mm:ss') : '-',
+          'Jam Keluar': record.clock_out_time ? format(new Date(record.clock_out_time), 'HH:mm:ss') : '-',
           'Status': record.status || '-',
-          'Keterangan': record.notes || '-',
+          'Keterangan': record.daily_report || '-',
         }));
 
         // Create worksheet
@@ -428,7 +430,6 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         type: 'array',
         bookSST: true,
         cellDates: true,
-        dateNF: 'dd/mm/yyyy',
         cellStyles: true,
         sheetStubs: true
       });
@@ -446,10 +447,17 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       link.click();
       document.body.removeChild(link);
       
-      toast.success('Data berhasil diekspor ke Excel');
+      toast({
+        title: "Berhasil",
+        description: 'Data berhasil diekspor ke Excel'
+      });
     } catch (error) {
       console.error('Error exporting to Excel:', error);
-      toast.error(error instanceof Error ? error.message : 'Gagal mengekspor data ke Excel');
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Gagal mengekspor data ke Excel',
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
       setDownloading(false);

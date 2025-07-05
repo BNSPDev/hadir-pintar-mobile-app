@@ -2,12 +2,8 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import { TempoDevtools } from "tempo-devtools";
 import { startHealthMonitoring } from "./utils/healthCheck";
 import { isDevelopment } from "./utils/env";
-
-// Initialize Tempo Devtools
-TempoDevtools.init();
 
 // Start health monitoring in production
 if (!isDevelopment()) {
