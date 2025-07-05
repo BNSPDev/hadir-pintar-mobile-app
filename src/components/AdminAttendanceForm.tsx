@@ -79,8 +79,50 @@ export function AdminAttendanceForm() {
   const today = format(new Date(), "yyyy-MM-dd");
 
   useEffect(() => {
-    fetchUsers();
-    fetchTodayAttendance();
+    const initializeData = async () => {
+      // First check if user has admin role
+      try {
+        const { data: roleData, error: roleError } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
+          .single();
+
+        console.log("Current user role:", roleData?.role);
+
+        if (roleError) {
+          console.error("Error checking user role:", roleError);
+          toast({
+            title: "Error",
+            description: "Tidak dapat memverifikasi role admin",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (roleData?.role !== "admin") {
+          toast({
+            title: "Access Denied",
+            description: "Anda tidak memiliki akses admin",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // If admin, fetch data
+        await fetchUsers();
+        await fetchTodayAttendance();
+      } catch (error: any) {
+        console.error("Error initializing admin data:", error);
+        toast({
+          title: "Error",
+          description: "Gagal menginisialisasi data admin",
+          variant: "destructive",
+        });
+      }
+    };
+
+    initializeData();
   }, []);
 
   const fetchUsers = async () => {
