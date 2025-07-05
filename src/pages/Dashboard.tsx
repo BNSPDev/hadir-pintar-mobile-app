@@ -278,18 +278,31 @@ export default function Dashboard() {
             </Button>
           )}
 
-          <Button
-            onClick={() => handleClockOutClick()}
-            disabled={
-              !todayRecord?.clock_in_time || !!todayRecord?.clock_out_time
-            }
-            className="h-24 bg-accent text-accent-foreground hover:bg-accent/90 font-bold text-lg disabled:opacity-50 disabled:bg-muted disabled:text-muted-foreground border-2 border-accent/30 shadow-md"
-          >
-            <div className="text-center">
-              <Clock className="w-8 h-8 mx-auto mb-2" />
-              <span className="text-base font-bold">Pulang</span>
-            </div>
-          </Button>
+          {!todayRecord?.clock_out_time ? (
+            <Button
+              onClick={() => handleClockOutClick()}
+              disabled={!todayRecord?.clock_in_time}
+              className="h-24 bg-accent text-accent-foreground hover:bg-accent/90 font-bold text-lg disabled:opacity-50 disabled:bg-muted disabled:text-muted-foreground border-2 border-accent/30 shadow-md"
+            >
+              <div className="text-center">
+                <Clock className="w-8 h-8 mx-auto mb-2" />
+                <span className="text-base font-bold">Pulang</span>
+              </div>
+            </Button>
+          ) : (
+            <Button
+              disabled
+              className="h-24 bg-success text-success-foreground font-bold text-lg shadow-md border-2 border-success/30"
+            >
+              <div className="text-center">
+                <CheckCircle className="w-8 h-8 mx-auto mb-2" />
+                <div className="text-sm font-bold">
+                  Pulang:{" "}
+                  {format(new Date(todayRecord.clock_out_time), "HH:mm")}
+                </div>
+              </div>
+            </Button>
+          )}
         </div>
 
         {/* Work Type Selector Modal */}
