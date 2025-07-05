@@ -585,9 +585,10 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       );
 
       if (!attendanceRecords || attendanceRecords.length === 0) {
-        const periodText = selectedMonth
-          ? `bulan ${getMonthName(selectedMonth)} ${selectedYear}`
-          : `tahun ${selectedYear}`;
+        const periodText =
+          selectedMonth && selectedMonth !== "all"
+            ? `bulan ${getMonthName(selectedMonth)} ${selectedYear}`
+            : `tahun ${selectedYear}`;
         toast({
           title: "Informasi",
           description: `Tidak ada data presensi untuk ${periodText}`,
