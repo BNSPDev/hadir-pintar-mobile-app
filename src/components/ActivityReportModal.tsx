@@ -26,6 +26,7 @@ interface ActivityReport {
 export function ActivityReportModal({
   isOpen,
   onClose,
+  onReportSaved,
 }: ActivityReportModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
