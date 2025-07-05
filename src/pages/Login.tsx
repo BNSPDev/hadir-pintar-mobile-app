@@ -125,13 +125,13 @@ export default function Login() {
 
               <Button
                 type="submit"
-                className="w-full h-12 font-semibold bg-gradient-primary hover:scale-[1.02] text-primary-foreground transition-all duration-200 border border-primary/20"
-                style={{ textShadow: "1px 1px 3px rgba(0, 0, 0, 1)" }}
+                size="lg"
+                className="w-full font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
                 disabled={loading}
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                     Sedang Masuk...
                   </>
                 ) : (
