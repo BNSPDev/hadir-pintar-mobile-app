@@ -69,11 +69,21 @@ export function ClockOutModal({
               </p>
               <Textarea
                 value={report}
-                onChange={(e) => setReport(e.target.value)}
+                onChange={(e) => {
+                  setReport(e.target.value);
+                  if (error) setError("");
+                }}
                 placeholder="Contoh: Menghadiri meeting tim, menyelesaikan laporan bulanan, koordinasi dengan departemen lain..."
-                className="min-h-[120px] resize-none"
+                className={`min-h-[120px] resize-none ${error ? "border-destructive focus:border-destructive" : ""}`}
                 required
+                maxLength={1000}
               />
+              {error && (
+                <p className="text-sm text-destructive mt-1">{error}</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                {report.length}/1000 karakter
+              </p>
             </div>
 
             <div className="flex gap-2">
