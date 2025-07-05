@@ -536,7 +536,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       );
 
       // Apply date filtering based on selected month and year
-      if (selectedMonth) {
+      if (selectedMonth && selectedMonth !== "all") {
         // Filter by specific month and year
         const year = parseInt(selectedYear);
         const month = parseInt(selectedMonth);
