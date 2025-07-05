@@ -99,7 +99,7 @@ export default function AttendanceHistory() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-32 sm:pb-20">
       <MobileHeader title="Rekap Presensi" />
 
       <div className="p-4 space-y-4">
