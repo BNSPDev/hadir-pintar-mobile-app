@@ -821,41 +821,70 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
             </div>
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex gap-4 flex-1">
-                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Pilih Bulan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Satu Tahun Penuh</SelectItem>
-                    <SelectItem value="1">Januari</SelectItem>
-                    <SelectItem value="2">Februari</SelectItem>
-                    <SelectItem value="3">Maret</SelectItem>
-                    <SelectItem value="4">April</SelectItem>
-                    <SelectItem value="5">Mei</SelectItem>
-                    <SelectItem value="6">Juni</SelectItem>
-                    <SelectItem value="7">Juli</SelectItem>
-                    <SelectItem value="8">Agustus</SelectItem>
-                    <SelectItem value="9">September</SelectItem>
-                    <SelectItem value="10">Oktober</SelectItem>
-                    <SelectItem value="11">November</SelectItem>
-                    <SelectItem value="12">Desember</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={selectedYear} onValueChange={setSelectedYear}>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue placeholder="Tahun" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 5 }, (_, i) => {
-                      const year = new Date().getFullYear() - i;
-                      return (
-                        <SelectItem key={year} value={year.toString()}>
-                          {year}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-gray-700">
+                    Periode Rekap:
+                  </label>
+                  <Select
+                    value={selectedMonth}
+                    onValueChange={setSelectedMonth}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Pilih Bulan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Satu Tahun Penuh</SelectItem>
+                      <SelectItem value="1">Januari</SelectItem>
+                      <SelectItem value="2">Februari</SelectItem>
+                      <SelectItem value="3">Maret</SelectItem>
+                      <SelectItem value="4">April</SelectItem>
+                      <SelectItem value="5">Mei</SelectItem>
+                      <SelectItem value="6">Juni</SelectItem>
+                      <SelectItem value="7">Juli</SelectItem>
+                      <SelectItem value="8">Agustus</SelectItem>
+                      <SelectItem value="9">September</SelectItem>
+                      <SelectItem value="10">Oktober</SelectItem>
+                      <SelectItem value="11">November</SelectItem>
+                      <SelectItem value="12">Desember</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-gray-700">
+                    Tahun:
+                  </label>
+                  <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Tahun" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 5 }, (_, i) => {
+                        const year = new Date().getFullYear() - i;
+                        return (
+                          <SelectItem key={year} value={year.toString()}>
+                            {year}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-gray-700">
+                    Ekspor Data:
+                  </label>
+                  <Button
+                    onClick={downloadUserData}
+                    disabled={downloading || users.length === 0}
+                    variant="default"
+                    className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <Download className="h-4 w-4" />
+                    {downloading
+                      ? "Mengunduh..."
+                      : `Excel ${selectedMonth ? getMonthName(selectedMonth) : "Tahunan"} ${selectedYear}`}
+                  </Button>
+                </div>
               </div>
             </div>
             <div className="relative">
