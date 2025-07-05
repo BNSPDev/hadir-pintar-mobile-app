@@ -29,8 +29,20 @@ import {
 export default function Profile() {
   // All hooks must be called at the top level, before any return/conditional
   const { user, signOut, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading, error: profileError, fetchProfile } = useProfile();
-  const { userRole, loading: roleLoading, error: roleError, isAdmin, updateRole, fetchUserRole } = useUserRole();
+  const {
+    profile,
+    loading: profileLoading,
+    error: profileError,
+    fetchProfile,
+  } = useProfile();
+  const {
+    userRole,
+    loading: roleLoading,
+    error: roleError,
+    isAdmin,
+    updateRole,
+    fetchUserRole,
+  } = useUserRole();
   const { toast } = useToast();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
@@ -60,7 +72,9 @@ export default function Profile() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
         <div className="bg-white rounded-lg shadow-md p-6 max-w-md w-full text-center">
-          <h2 className="font-bold text-xl text-destructive mb-4">Gagal Memuat Data</h2>
+          <h2 className="font-bold text-xl text-destructive mb-4">
+            Gagal Memuat Data
+          </h2>
           {profileError && (
             <div className="mb-3 p-3 bg-red-50 text-red-700 rounded-md">
               <p className="font-medium">Gagal memuat profil:</p>
@@ -75,18 +89,18 @@ export default function Profile() {
           )}
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
             {profileError && (
-              <Button 
-                onClick={fetchProfile} 
-                variant="outline" 
+              <Button
+                onClick={fetchProfile}
+                variant="outline"
                 className="w-full sm:w-auto"
               >
                 Muat Ulang Profil
               </Button>
             )}
             {roleError && (
-              <Button 
-                onClick={fetchUserRole} 
-                variant="default" 
+              <Button
+                onClick={fetchUserRole}
+                variant="default"
                 className="w-full sm:w-auto"
               >
                 Muat Ulang Peran
@@ -143,7 +157,7 @@ export default function Profile() {
   ];
 
   return (
-    <div className="min-h-screen pb-24 bg-background">
+    <div className="min-h-screen pb-32 sm:pb-24 bg-background">
       <MobileHeader title="Akun" />
       <div className="p-4 space-y-6 mt-2">
         {/* User Profile Card */}
