@@ -13,6 +13,7 @@ import { id } from "date-fns/locale";
 interface ActivityReportModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onReportSaved?: () => void; // Callback to refresh dashboard
 }
 
 interface ActivityReport {
@@ -25,6 +26,7 @@ interface ActivityReport {
 export function ActivityReportModal({
   isOpen,
   onClose,
+  onReportSaved,
 }: ActivityReportModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -34,12 +36,38 @@ export function ActivityReportModal({
   const [selectedDate, setSelectedDate] = useState(
     format(new Date(), "yyyy-MM-dd"),
   );
+  const [todayReport, setTodayReport] = useState("");
 
   useEffect(() => {
     if (isOpen && user) {
       fetchReports();
+      fetchTodayReport();
     }
   }, [isOpen, user]);
+
+  const fetchTodayReport = async () => {
+    try {
+      const today = format(new Date(), "yyyy-MM-dd");
+      const { data, error } = await supabase
+        .from("attendance_records")
+        .select("daily_report")
+        .eq("user_id", user?.id)
+        .eq("date", today)
+        .maybeSingle();
+
+      if (error && error.code !== "PGRST116") throw error;
+
+      if (data?.daily_report) {
+        setTodayReport(data.daily_report);
+        setNewReport(data.daily_report);
+      } else {
+        setTodayReport("");
+        setNewReport("");
+      }
+    } catch (error) {
+      console.error("Error fetching today's report:", error);
+    }
+  };
 
   const fetchReports = async () => {
     try {
@@ -93,13 +121,13 @@ export function ActivityReportModal({
 
         if (error) throw error;
       } else {
-        // Create new record
+        // Create new record without clock_out_time (report only)
         const { error } = await supabase.from("attendance_records").insert({
           user_id: user?.id,
           date: selectedDate,
           daily_report: newReport.trim(),
           work_type: "WFO",
-          status: "completed",
+          status: "report_only", // Special status for report-only records
         });
 
         if (error) throw error;
@@ -112,6 +140,11 @@ export function ActivityReportModal({
 
       setNewReport("");
       fetchReports();
+
+      // Call callback to refresh dashboard
+      if (onReportSaved) {
+        onReportSaved();
+      }
     } catch (error: any) {
       toast({
         title: "Gagal",
@@ -144,28 +177,20 @@ export function ActivityReportModal({
         </CardHeader>
 
         <CardContent className="flex-1 flex flex-col">
-          {/* Add New Report */}
+          {/* Today's Report */}
           <div className="space-y-4 mb-6">
             <div>
               <label className="text-sm font-medium text-card-foreground mb-2 block">
-                Tanggal
+                Laporan Kegiatan Hari Ini
               </label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full p-2 rounded-md bg-input border border-border text-foreground"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-card-foreground mb-2 block">
-                Laporan Kegiatan
-              </label>
+              <p className="text-xs text-muted-foreground mb-2">
+                {format(new Date(), "EEEE, dd MMMM yyyy", { locale: id })}
+              </p>
               <Textarea
                 value={newReport}
                 onChange={(e) => setNewReport(e.target.value)}
                 placeholder="Tuliskan kegiatan yang telah dilakukan hari ini..."
-                className="min-h-[100px] bg-input border-border text-foreground placeholder:text-muted-foreground"
+                className="min-h-[120px] bg-input border-border text-foreground placeholder:text-muted-foreground"
               />
             </div>
             <Button
@@ -174,8 +199,18 @@ export function ActivityReportModal({
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               <Plus className="w-4 h-4 mr-2" />
-              {loading ? "Menyimpan..." : "Simpan Laporan"}
+              {loading
+                ? "Menyimpan..."
+                : todayReport
+                  ? "Update Laporan"
+                  : "Simpan Laporan"}
             </Button>
+            {todayReport && (
+              <p className="text-xs text-success text-center">
+                ✅ Laporan hari ini sudah tersimpan. Saat absen pulang tidak
+                perlu mengisi laporan lagi.
+              </p>
+            )}
           </div>
 
           {/* Reports History */}

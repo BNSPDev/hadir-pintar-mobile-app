@@ -125,6 +125,17 @@ export default function Dashboard() {
     }
   };
 
+  const handleClockOutClick = async () => {
+    // Check if daily report already exists
+    if (todayRecord?.daily_report && todayRecord.daily_report.trim()) {
+      // If report already exists, clock out directly without modal
+      await handleClockOut(todayRecord.daily_report);
+    } else {
+      // If no report exists, show modal to fill report
+      setShowClockOutModal(true);
+    }
+  };
+
   const handleClockOut = async (report: string) => {
     setLoading(true);
     try {
@@ -198,23 +209,23 @@ export default function Dashboard() {
   const timeString = format(currentTime, "HH:mm:ss");
 
   return (
-    <div className="min-h-screen pb-24 bg-[#ffffff]">
+    <div className="min-h-screen pb-32 sm:pb-24 bg-background">
       <MobileHeader title={profile?.full_name || "User"} />
-      <div className="p-4 space-y-6 mt-2">
+      <div className="p-4 space-y-6 mt-4">
         {/* User Profile Card */}
-        <Card className="shadow-card border border-border bg-gradient-card backdrop-blur-sm">
+        <Card className="shadow-md border border-border bg-card">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <Avatar className="w-16 h-16 ring-2 ring-accent/30 shadow-soft">
-                  <AvatarFallback className="bg-gradient-primary text-primary-foreground text-lg font-bold">
+                <Avatar className="w-16 h-16 ring-2 ring-primary/20 shadow-sm">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
                     {profile?.full_name?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-success rounded-full border-2 border-white"></div>
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-success rounded-full border-2 border-white shadow-sm"></div>
               </div>
-              <div className="flex-1">
-                <h2 className="font-bold text-xl text-foreground">
+              <div className="flex-1 min-w-0">
+                <h2 className="font-bold text-xl text-foreground truncate">
                   {profile?.full_name || "Loading..."}
                 </h2>
                 <p className="text-sm font-semibold text-secondary">
@@ -229,17 +240,14 @@ export default function Dashboard() {
         </Card>
 
         {/* Current Time */}
-        <Card className="shadow-card border border-accent/20 bg-gradient-to-br from-accent/5 via-background to-secondary/5 backdrop-blur-sm">
-          <CardContent className="p-6 text-center relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-transparent pointer-events-none"></div>
-            <div className="relative z-10">
-              <p className="text-sm text-muted-foreground mb-3 font-medium tracking-wide">
-                {indonesianDate}
-              </p>
-              <p className="text-4xl font-bold text-primary tracking-tight">
-                {timeString}
-              </p>
-            </div>
+        <Card className="shadow-md border border-border bg-gradient-to-br from-primary/5 via-card to-accent/5">
+          <CardContent className="p-6 text-center">
+            <p className="text-sm text-muted-foreground mb-3 font-medium tracking-wide">
+              {indonesianDate}
+            </p>
+            <p className="text-4xl font-bold text-primary tracking-tight">
+              {timeString}
+            </p>
           </CardContent>
         </Card>
 
@@ -248,46 +256,59 @@ export default function Dashboard() {
           {!todayRecord?.clock_in_time ? (
             <Button
               onClick={() => setShowWorkTypeSelector(true)}
-              className="h-24 bg-gradient-secondary hover:shadow-card hover:scale-[1.02] text-white font-bold text-lg border border-secondary/20 shadow-soft"
+              className="h-24 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-bold text-lg border-2 border-secondary/30 shadow-md"
               disabled={loading}
             >
               <div className="text-center">
-                <Clock className="w-7 h-7 mx-auto mb-2" />
-                <span className="text-base">Masuk</span>
+                <Clock className="w-8 h-8 mx-auto mb-2" />
+                <span className="text-base font-bold">Masuk</span>
               </div>
             </Button>
           ) : (
             <Button
               disabled
-              className="h-24 bg-gradient-to-br from-success to-success/80 text-success-foreground font-bold text-lg shadow-soft border border-success/20"
+              className="h-24 bg-success text-success-foreground font-bold text-lg shadow-md border-2 border-success/30"
             >
               <div className="text-center">
-                <CheckCircle className="w-7 h-7 mx-auto mb-2" />
-                <div className="text-xs font-semibold">
-                  {format(new Date(todayRecord.clock_in_time), "HH:mm")}
+                <CheckCircle className="w-8 h-8 mx-auto mb-2" />
+                <div className="text-sm font-bold">
+                  Masuk: {format(new Date(todayRecord.clock_in_time), "HH:mm")}
                 </div>
               </div>
             </Button>
           )}
 
-          <Button
-            onClick={() => setShowClockOutModal(true)}
-            disabled={
-              !todayRecord?.clock_in_time || !!todayRecord?.clock_out_time
-            }
-            className="h-24 bg-gradient-accent hover:shadow-card hover:scale-[1.02] text-accent-foreground font-bold text-lg disabled:opacity-50 border border-accent/20 shadow-soft"
-          >
-            <div className="text-center">
-              <Clock className="w-7 h-7 mx-auto mb-2" />
-              <span className="text-base">Pulang</span>
-            </div>
-          </Button>
+          {!todayRecord?.clock_out_time ? (
+            <Button
+              onClick={() => handleClockOutClick()}
+              disabled={!todayRecord?.clock_in_time}
+              className="h-24 bg-accent text-accent-foreground hover:bg-accent/90 font-bold text-lg disabled:opacity-50 disabled:bg-muted disabled:text-muted-foreground border-2 border-accent/30 shadow-md"
+            >
+              <div className="text-center">
+                <Clock className="w-8 h-8 mx-auto mb-2" />
+                <span className="text-base font-bold">Pulang</span>
+              </div>
+            </Button>
+          ) : (
+            <Button
+              disabled
+              className="h-24 bg-success text-success-foreground font-bold text-lg shadow-md border-2 border-success/30"
+            >
+              <div className="text-center">
+                <CheckCircle className="w-8 h-8 mx-auto mb-2" />
+                <div className="text-sm font-bold">
+                  Pulang:{" "}
+                  {format(new Date(todayRecord.clock_out_time), "HH:mm")}
+                </div>
+              </div>
+            </Button>
+          )}
         </div>
 
         {/* Work Type Selector Modal */}
         {showWorkTypeSelector && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-white/20">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-border">
               <h3 className="font-bold text-xl mb-6 text-center text-foreground">
                 Pilih Tipe Kerja
               </h3>
@@ -298,12 +319,14 @@ export default function Dashboard() {
                     <Button
                       key={option.type}
                       onClick={() => handleClockIn(option.type)}
-                      className={`h-24 ${option.color} hover:scale-[1.05] hover:shadow-lg text-white font-bold transition-all duration-200 border border-white/20`}
+                      className={`h-24 ${option.color} hover:opacity-90 text-white font-bold border-2 border-white/30 shadow-md`}
                       disabled={loading}
                     >
                       <div className="text-center">
-                        <Icon className="w-7 h-7 mx-auto mb-2" />
-                        <span className="text-base">{option.label}</span>
+                        <Icon className="w-8 h-8 mx-auto mb-2" />
+                        <span className="text-base font-bold">
+                          {option.label}
+                        </span>
                       </div>
                     </Button>
                   );
@@ -312,7 +335,8 @@ export default function Dashboard() {
               <Button
                 variant="outline"
                 onClick={() => setShowWorkTypeSelector(false)}
-                className="w-full mt-6 h-12 font-semibold border-2 hover:bg-muted"
+                size="lg"
+                className="w-full mt-6 font-bold text-foreground"
                 disabled={loading}
               >
                 Batal
@@ -323,8 +347,16 @@ export default function Dashboard() {
 
         {/* Today's Activity Report */}
         <Card
-          className="shadow-card border border-border bg-gradient-card cursor-pointer hover:bg-muted/20 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] backdrop-blur-sm"
-          onClick={() => setShowActivityModal(true)}
+          className={`shadow-card border border-border bg-gradient-card transition-all duration-300 backdrop-blur-sm ${
+            todayRecord?.clock_out_time
+              ? "opacity-60 cursor-not-allowed"
+              : "cursor-pointer hover:bg-muted/20 hover:shadow-lg hover:scale-[1.01]"
+          }`}
+          onClick={() => {
+            if (!todayRecord?.clock_out_time) {
+              setShowActivityModal(true);
+            }
+          }}
         >
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -333,11 +365,32 @@ export default function Dashboard() {
                   Laporkan Kegiatan Hari Ini
                 </h3>
                 <p className="text-sm text-muted-foreground font-medium leading-relaxed">
-                  Jangan lupa untuk selalu melaporkan pekerjaanmu setiap harian.
+                  {todayRecord?.clock_out_time
+                    ? "📝 Laporan kegiatan telah tersimpan dan tidak dapat diubah."
+                    : todayRecord?.daily_report &&
+                        todayRecord.daily_report.trim()
+                      ? "✅ Laporan sudah terisi. Klik untuk melihat atau edit."
+                      : "Jangan lupa untuk selalu melaporkan pekerjaanmu setiap harian."}
                 </p>
               </div>
-              <div className="bg-accent/10 rounded-full p-2">
-                <ChevronRight className="w-6 h-6 text-accent" />
+              <div
+                className={`rounded-full p-2 ${
+                  todayRecord?.clock_out_time
+                    ? "bg-muted"
+                    : todayRecord?.daily_report &&
+                        todayRecord.daily_report.trim()
+                      ? "bg-success/10"
+                      : "bg-accent/10"
+                }`}
+              >
+                {todayRecord?.clock_out_time ? (
+                  <CheckCircle className="w-6 h-6 text-muted-foreground" />
+                ) : todayRecord?.daily_report &&
+                  todayRecord.daily_report.trim() ? (
+                  <CheckCircle className="w-6 h-6 text-success" />
+                ) : (
+                  <ChevronRight className="w-6 h-6 text-accent" />
+                )}
               </div>
             </div>
           </CardContent>
@@ -404,6 +457,7 @@ export default function Dashboard() {
         <ActivityReportModal
           isOpen={showActivityModal}
           onClose={() => setShowActivityModal(false)}
+          onReportSaved={fetchTodayAttendance}
         />
       </div>
       <BottomNav />
