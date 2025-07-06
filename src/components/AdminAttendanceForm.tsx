@@ -521,27 +521,31 @@ export function AdminAttendanceForm() {
         </CardContent>
       </Card>
 
-      {/* Today's Attendance Summary */}
+      {/* Today's Attendance Summary - Mobile Optimized */}
       <Card className="shadow-md border border-border bg-card">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Calendar className="w-6 h-6 text-primary" />
-              Presensi Hari Ini
+              <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+              <div className="min-w-0">
+                <CardTitle className="text-lg font-bold">
+                  Presensi Hari Ini
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {format(new Date(), "EEEE, dd MMMM yyyy", { locale: id })}
+                </p>
+              </div>
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={fetchTodayAttendance}
               disabled={loading}
-              className="h-8"
+              className="h-8 self-start sm:self-auto"
             >
               Refresh
             </Button>
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            {format(new Date(), "EEEE, dd MMMM yyyy", { locale: id })}
-          </p>
+          </div>
         </CardHeader>
         <CardContent>
           {loadingUsers ? (
