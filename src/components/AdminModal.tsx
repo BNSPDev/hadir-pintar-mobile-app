@@ -165,11 +165,11 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
             const { count, error: countError } = await supabase
               .from("attendance_records")
               .select("*", { count: "exact", head: true })
-              .eq("user_id", profile.id);
+              .eq("user_id", profile.user_id);
 
             if (countError) {
               console.warn(
-                `Error getting attendance count for user ${profile.id}:`,
+                `Error getting attendance count for user ${profile.user_id}:`,
                 countError,
               );
             }
@@ -178,7 +178,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
             const { data: lastAttendance, error: lastError } = await supabase
               .from("attendance_records")
               .select("date")
-              .eq("user_id", profile.id)
+              .eq("user_id", profile.user_id)
               .order("date", { ascending: false })
               .limit(1)
               .single();
@@ -186,7 +186,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
             if (lastError && lastError.code !== "PGRST116") {
               // Ignore 'No rows found' error
               console.warn(
-                `Error getting last attendance for user ${profile.id}:`,
+                `Error getting last attendance for user ${profile.user_id}:`,
                 lastError,
               );
             }
