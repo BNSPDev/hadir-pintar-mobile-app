@@ -68,6 +68,63 @@ export function AdminAttendanceForm() {
 
   const today = format(new Date(), "yyyy-MM-dd");
 
+  // Load existing record when user is selected
+  const loadExistingRecord = async (userId: string) => {
+    try {
+      const result = await fetchAttendanceByDate(today);
+      const userRecord = result.records.find(
+        (record) => record.user_id === userId,
+      );
+
+      if (userRecord) {
+        setExistingRecord(userRecord);
+        setIsEditMode(true);
+
+        // Auto-fill form with existing data
+        setWorkType(userRecord.work_type);
+        if (userRecord.clock_in_time) {
+          const clockInTime = new Date(userRecord.clock_in_time);
+          setClockInTime(format(clockInTime, "HH:mm"));
+        }
+        if (userRecord.clock_out_time) {
+          const clockOutTime = new Date(userRecord.clock_out_time);
+          setClockOutTime(format(clockOutTime, "HH:mm"));
+        }
+        setDailyReport(userRecord.daily_report || "");
+
+        toast({
+          title: "Data Ditemukan",
+          description: `Memuat data presensi ${users.find((u) => u.user_id === userId)?.full_name || "user"} hari ini`,
+          variant: "default",
+        });
+      } else {
+        // Reset if no existing record
+        setExistingRecord(null);
+        setIsEditMode(false);
+      }
+    } catch (error) {
+      console.error("Error loading existing record:", error);
+    }
+  };
+
+  // Handle user selection change
+  const handleUserChange = (userId: string) => {
+    setSelectedUser(userId);
+
+    // Reset form first
+    setWorkType("");
+    setClockInTime("");
+    setClockOutTime("");
+    setDailyReport("");
+    setExistingRecord(null);
+    setIsEditMode(false);
+
+    // Load existing record if user is selected
+    if (userId && userId !== "loading" && userId !== "no-users") {
+      loadExistingRecord(userId);
+    }
+  };
+
   useEffect(() => {
     const initializeData = async () => {
       try {
@@ -170,19 +227,54 @@ export function AdminAttendanceForm() {
     }
   };
 
-  const handleSubmit = async () => {
-    // Validate form using helper
-    const validation = validateAttendanceForm({
-      userId: selectedUser,
-      workType,
-      clockInTime,
-      clockOutTime,
-    });
-
-    if (!validation.isValid) {
+  const handleSubmit = async (saveType: "draft" | "complete" = "draft") => {
+    // Basic validation
+    if (
+      !selectedUser ||
+      selectedUser === "loading" ||
+      selectedUser === "no-users"
+    ) {
       toast({
         title: "Error",
-        description: validation.error!,
+        description: "Harap pilih user terlebih dahulu",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!workType) {
+      toast({
+        title: "Error",
+        description: "Harap pilih tipe kerja",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!clockInTime) {
+      toast({
+        title: "Error",
+        description: "Jam masuk wajib diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // For complete save, require clock out time
+    if (saveType === "complete" && !clockOutTime) {
+      toast({
+        title: "Error",
+        description: "Jam pulang wajib diisi untuk menyelesaikan presensi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate clock out time is after clock in time
+    if (clockOutTime && clockOutTime <= clockInTime) {
+      toast({
+        title: "Error",
+        description: "Jam pulang harus setelah jam masuk",
         variant: "destructive",
       });
       return;
@@ -195,7 +287,7 @@ export function AdminAttendanceForm() {
         userId: selectedUser,
         date: today,
         clockInTime,
-        clockOutTime,
+        clockOutTime: saveType === "complete" ? clockOutTime : clockOutTime, // Allow partial save
         workType,
         dailyReport,
       });
@@ -207,17 +299,33 @@ export function AdminAttendanceForm() {
       const selectedUserName =
         users.find((u) => u.user_id === selectedUser)?.full_name || "User";
 
+      const statusText =
+        saveType === "complete"
+          ? clockOutTime
+            ? "diselesaikan"
+            : "disimpan"
+          : existingRecord
+            ? "diperbarui"
+            : "disimpan sebagai draft";
+
       toast({
         title: "Berhasil",
-        description: `Presensi ${selectedUserName} telah ${result.isUpdate ? "diperbarui" : "disimpan"}`,
+        description: `Presensi ${selectedUserName} telah ${statusText}`,
       });
 
-      // Reset form
-      setSelectedUser("");
-      setWorkType("");
-      setClockInTime("");
-      setClockOutTime("");
-      setDailyReport("");
+      // Only reset form if it's a complete save
+      if (saveType === "complete") {
+        setSelectedUser("");
+        setWorkType("");
+        setClockInTime("");
+        setClockOutTime("");
+        setDailyReport("");
+        setExistingRecord(null);
+        setIsEditMode(false);
+      } else {
+        // For draft save, reload the record to update the UI
+        await loadExistingRecord(selectedUser);
+      }
 
       // Refresh today's attendance
       await fetchTodayAttendance();
@@ -249,7 +357,7 @@ export function AdminAttendanceForm() {
             <label className="text-sm font-medium text-foreground mb-2 block">
               Pilih User
             </label>
-            <Select value={selectedUser} onValueChange={setSelectedUser}>
+            <Select value={selectedUser} onValueChange={handleUserChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Pilih user..." />
               </SelectTrigger>
@@ -349,9 +457,61 @@ export function AdminAttendanceForm() {
             />
           </div>
 
-          <Button onClick={handleSubmit} className="w-full" disabled={loading}>
-            {loading ? "Menyimpan..." : "Simpan Presensi"}
-          </Button>
+          {/* Status Indicator */}
+          {isEditMode && existingRecord && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-sm font-medium text-blue-700">
+                  Mode Edit: Data presensi ditemukan
+                </span>
+              </div>
+              <div className="text-xs text-blue-600 mt-1">
+                Status:{" "}
+                {existingRecord.clock_out_time
+                  ? "Selesai"
+                  : "Draft (Jam pulang belum diisi)"}
+              </div>
+            </div>
+          )}
+
+          {/* Save Buttons */}
+          <div className="grid grid-cols-1 gap-3">
+            {!existingRecord?.clock_out_time && (
+              <Button
+                onClick={() => handleSubmit("draft")}
+                variant="outline"
+                className="w-full"
+                disabled={loading}
+              >
+                {loading
+                  ? "Menyimpan..."
+                  : isEditMode
+                    ? "Update Draft"
+                    : "Simpan Draft"}
+              </Button>
+            )}
+
+            {clockOutTime && (
+              <Button
+                onClick={() => handleSubmit("complete")}
+                className="w-full bg-green-600 hover:bg-green-700"
+                disabled={loading}
+              >
+                {loading ? "Menyelesaikan..." : "Selesaikan Presensi"}
+              </Button>
+            )}
+
+            {!clockOutTime && !isEditMode && (
+              <Button
+                onClick={() => handleSubmit("draft")}
+                className="w-full"
+                disabled={loading}
+              >
+                {loading ? "Menyimpan..." : "Simpan Presensi"}
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
