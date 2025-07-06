@@ -419,6 +419,24 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         return;
       }
 
+      // Get unique user IDs from attendance records
+      const userIds = [...new Set(attendance.map((record) => record.user_id))];
+
+      // Get profiles for these users
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, position, department, employee_id")
+        .in("user_id", userIds);
+
+      if (profilesError) {
+        console.warn("Could not fetch profiles:", profilesError);
+      }
+
+      // Create profiles map for quick lookup
+      const profilesMap = new Map(
+        profilesData?.map((profile) => [profile.user_id, profile]) || [],
+      );
+
       // Group attendance by user
       const attendanceByUser: Record<string, any[]> = {};
 
