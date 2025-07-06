@@ -403,22 +403,10 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     try {
       setLoading(true);
 
-      // Get all attendance records with user details
+      // Get all attendance records
       const { data: attendance, error } = await supabase
         .from("attendance_records")
-        .select(
-          `
-          *,
-          profiles!inner(
-            id,
-            full_name,
-            email,
-            position,
-            department,
-            employee_id
-          )
-        `,
-        )
+        .select("*")
         .order("clock_in_time", { ascending: false });
 
       if (error) throw error;
