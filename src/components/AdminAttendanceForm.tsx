@@ -48,6 +48,10 @@ export function AdminAttendanceForm() {
   const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord[]>(
     [],
   );
+  const [existingRecord, setExistingRecord] = useState<AttendanceRecord | null>(
+    null,
+  );
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const workTypeOptions = [
     { value: "WFO", label: "WFO", icon: Building2, color: "bg-attendance-wfo" },
