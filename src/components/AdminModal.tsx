@@ -3,7 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { X, Download, Edit, Save, XCircle, Trash, Pencil } from "lucide-react";
+import {
+  X,
+  Download,
+  Edit,
+  Save,
+  XCircle,
+  Trash,
+  Pencil,
+  Activity,
+  AlertTriangle,
+  CheckCircle,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -17,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { performHealthCheck } from "@/utils/adminValidation";
 
 interface AdminModalProps {
   isOpen: boolean;
@@ -76,6 +88,11 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
   const [selectedYear, setSelectedYear] = useState<string>(
     new Date().getFullYear().toString(),
   );
+  const [healthStatus, setHealthStatus] = useState<{
+    overall: boolean;
+    lastCheck?: Date;
+    details?: any;
+  }>({ overall: true });
 
   // Available departments
   const departments = [
@@ -859,6 +876,54 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     return months[parseInt(month)] || month;
   };
 
+  // Run health check
+  const runHealthCheck = async () => {
+    try {
+      setLoading(true);
+      const healthResult = await performHealthCheck();
+
+      setHealthStatus({
+        overall: healthResult.overall,
+        lastCheck: new Date(),
+        details: healthResult,
+      });
+
+      const totalErrors =
+        healthResult.system.errors.length +
+        healthResult.attendance.errors.length +
+        healthResult.export.errors.length +
+        (healthResult.permissions?.errors.length || 0);
+
+      const totalWarnings =
+        healthResult.system.warnings.length +
+        healthResult.attendance.warnings.length +
+        healthResult.export.warnings.length +
+        (healthResult.permissions?.warnings.length || 0);
+
+      if (healthResult.overall) {
+        toast({
+          title: "Sistem Admin Sehat",
+          description: `Semua fungsi bekerja normal${totalWarnings > 0 ? ` (${totalWarnings} peringatan)` : ""}`,
+        });
+      } else {
+        toast({
+          title: "Masalah Terdeteksi",
+          description: `Ditemukan ${totalErrors} error dan ${totalWarnings} peringatan`,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Health Check Gagal",
+        description:
+          error.message || "Tidak dapat menjalankan pemeriksaan sistem",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -929,13 +994,14 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                 </div>
               </div>
 
-              {/* Download Button - Full Width on Mobile */}
-              <div className="w-full">
+              {/* Action Buttons Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Download Button */}
                 <Button
                   onClick={downloadUserData}
                   disabled={downloading || users.length === 0}
                   size="lg"
-                  className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white font-bold shadow-md"
+                  className="gap-2 bg-green-600 hover:bg-green-700 text-white font-bold shadow-md"
                 >
                   <Download className="h-5 w-5" />
                   <span className="hidden sm:inline">
@@ -945,6 +1011,31 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                   </span>
                   <span className="sm:hidden">
                     {downloading ? "Mengunduh..." : "Unduh Excel"}
+                  </span>
+                </Button>
+
+                {/* Health Check Button */}
+                <Button
+                  onClick={runHealthCheck}
+                  disabled={loading}
+                  size="lg"
+                  variant="outline"
+                  className={`gap-2 font-bold shadow-md border-2 ${
+                    healthStatus.overall
+                      ? "border-green-500 text-green-700 hover:bg-green-50"
+                      : "border-orange-500 text-orange-700 hover:bg-orange-50"
+                  }`}
+                >
+                  {healthStatus.overall ? (
+                    <CheckCircle className="h-5 w-5" />
+                  ) : (
+                    <AlertTriangle className="h-5 w-5" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {loading ? "Checking..." : "Health Check"}
+                  </span>
+                  <span className="sm:hidden">
+                    {loading ? "Check..." : "Status"}
                   </span>
                 </Button>
               </div>
