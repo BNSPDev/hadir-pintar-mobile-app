@@ -212,7 +212,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
 
             return userData;
           } catch (error) {
-            console.error(`Error processing user ${profile.id}:`, error);
+            console.error(`Error processing user ${profile.user_id}:`, error);
             // Return minimal user data if processing fails
             return {
               id: profile.id,
