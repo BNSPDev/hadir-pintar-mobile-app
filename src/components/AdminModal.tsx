@@ -934,8 +934,9 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black bg-opacity-50">
-      <Card className="w-full max-w-6xl max-h-[95vh] flex flex-col mx-2">
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-50">
+      <div className="absolute inset-4 sm:inset-8">
+        <Card className="w-full h-full flex flex-col">
         <CardHeader className="border-b p-4">
           <div className="flex flex-col space-y-4">
             <div className="flex justify-between items-center">
