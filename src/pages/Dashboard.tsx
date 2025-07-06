@@ -8,6 +8,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { ClockOutModal } from "@/components/ClockOutModal";
 import { ActivityReportModal } from "@/components/ActivityReportModal";
 import { AdminAttendanceForm } from "@/components/AdminAttendanceForm";
+import { AdminModal } from "@/components/AdminModal";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -56,6 +57,7 @@ export default function Dashboard() {
   const [showWorkTypeSelector, setShowWorkTypeSelector] = useState(false);
   const [showClockOutModal, setShowClockOutModal] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Update time every second
@@ -261,10 +263,43 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
+          {/* Admin Control Panel */}
+          <Card className="shadow-md border border-border bg-gradient-to-br from-blue-50 to-indigo-50">
+            <CardContent className="p-6">
+              <h3 className="font-bold text-lg text-foreground mb-4 flex items-center gap-2">
+                <Shield className="w-5 h-5 text-primary" />
+                Panel Kontrol Admin
+              </h3>
+              <div className="grid grid-cols-1 gap-3">
+                <Button
+                  onClick={() => setShowAdminModal(true)}
+                  className="h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold shadow-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-6 h-6" />
+                    <div className="text-left">
+                      <div className="text-base">Manajemen User & Data</div>
+                      <div className="text-xs opacity-90">
+                        Kelola user dan ekspor data
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 ml-auto" />
+                  </div>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Admin Attendance Form */}
           <AdminAttendanceForm />
         </div>
         <BottomNav />
+
+        {/* Admin Modal */}
+        <AdminModal
+          isOpen={showAdminModal}
+          onClose={() => setShowAdminModal(false)}
+        />
       </div>
     );
   }
