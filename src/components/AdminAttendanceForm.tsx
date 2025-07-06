@@ -461,31 +461,33 @@ export function AdminAttendanceForm() {
             />
           </div>
 
-          {/* Status Indicator */}
+          {/* Status Indicator - Mobile Optimized */}
           {isEditMode && existingRecord && (
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-sm font-medium text-blue-700">
-                  Mode Edit: Data presensi ditemukan
-                </span>
-              </div>
-              <div className="text-xs text-blue-600 mt-1">
-                Status:{" "}
-                {existingRecord.clock_out_time
-                  ? "Selesai"
-                  : "Draft (Jam pulang belum diisi)"}
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-1 flex-shrink-0"></div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-sm font-medium text-blue-700 block">
+                    Mode Edit: Data presensi ditemukan
+                  </span>
+                  <div className="text-xs text-blue-600 mt-1">
+                    Status:{" "}
+                    {existingRecord.clock_out_time
+                      ? "Selesai"
+                      : "Draft (Jam pulang belum diisi)"}
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Save Buttons */}
-          <div className="grid grid-cols-1 gap-3">
+          {/* Save Buttons - Mobile Optimized */}
+          <div className="space-y-3">
             {!existingRecord?.clock_out_time && (
               <Button
                 onClick={() => handleSubmit("draft")}
                 variant="outline"
-                className="w-full"
+                className="w-full h-12 text-base font-medium"
                 disabled={loading}
               >
                 {loading
@@ -499,7 +501,7 @@ export function AdminAttendanceForm() {
             {clockOutTime && (
               <Button
                 onClick={() => handleSubmit("complete")}
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="w-full h-12 text-base font-medium bg-green-600 hover:bg-green-700"
                 disabled={loading}
               >
                 {loading ? "Menyelesaikan..." : "Selesaikan Presensi"}
@@ -509,7 +511,7 @@ export function AdminAttendanceForm() {
             {!clockOutTime && !isEditMode && (
               <Button
                 onClick={() => handleSubmit("draft")}
-                className="w-full"
+                className="w-full h-12 text-base font-medium"
                 disabled={loading}
               >
                 {loading ? "Menyimpan..." : "Simpan Presensi"}
