@@ -521,9 +521,59 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     try {
       setDownloading(true);
 
-      // Build date filter query
-      let query = supabase.from("attendance_records").select(
-        `
+      // Validate date inputs
+      if (!selectedYear || isNaN(parseInt(selectedYear))) {
+        toast({
+          title: "Error",
+          description: "Tahun tidak valid",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const year = parseInt(selectedYear);
+      const currentYear = new Date().getFullYear();
+
+      if (year < 2020 || year > currentYear + 1) {
+        toast({
+          title: "Error",
+          description: `Tahun harus antara 2020 dan ${currentYear + 1}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Build date filter
+      let startDate: string;
+      let endDate: string;
+
+      if (selectedMonth && selectedMonth !== "all") {
+        const month = parseInt(selectedMonth);
+        if (isNaN(month) || month < 1 || month > 12) {
+          toast({
+            title: "Error",
+            description: "Bulan tidak valid",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        startDate = new Date(year, month - 1, 1).toISOString().split("T")[0];
+        endDate = new Date(year, month, 0).toISOString().split("T")[0];
+      } else {
+        startDate = new Date(year, 0, 1).toISOString().split("T")[0];
+        endDate = new Date(year, 11, 31).toISOString().split("T")[0];
+      }
+
+      console.log(
+        `Fetching attendance records from ${startDate} to ${endDate}`,
+      );
+
+      // Get attendance records with proper error handling
+      const { data: attendanceRecords, error: attendanceError } = await supabase
+        .from("attendance_records")
+        .select(
+          `
           id,
           date,
           clock_in_time,
@@ -533,37 +583,19 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
           daily_report,
           user_id
         `,
-      );
-
-      // Apply date filtering based on selected month and year
-      if (selectedMonth && selectedMonth !== "all") {
-        // Filter by specific month and year
-        const year = parseInt(selectedYear);
-        const month = parseInt(selectedMonth);
-        const startDate = new Date(year, month - 1, 1)
-          .toISOString()
-          .split("T")[0];
-        const endDate = new Date(year, month, 0).toISOString().split("T")[0];
-
-        query = query.gte("date", startDate).lte("date", endDate);
-      } else {
-        // Filter by full year
-        const year = parseInt(selectedYear);
-        const startDate = new Date(year, 0, 1).toISOString().split("T")[0];
-        const endDate = new Date(year, 11, 31).toISOString().split("T")[0];
-
-        query = query.gte("date", startDate).lte("date", endDate);
-      }
-
-      const { data: attendanceRecords, error: attendanceError } =
-        await query.order("date", { ascending: false });
+        )
+        .gte("date", startDate)
+        .lte("date", endDate)
+        .order("date", { ascending: false });
 
       if (attendanceError) {
-        console.error("Supabase error:", attendanceError);
-        throw new Error(`Database error: ${attendanceError.message}`);
+        console.error("Attendance records error:", attendanceError);
+        throw new Error(
+          `Gagal mengambil data presensi: ${attendanceError.message}`,
+        );
       }
 
-      // Get all profiles separately
+      // Get all profiles separately with error handling
       const { data: profiles, error: profilesError } = await supabase.from(
         "profiles",
       ).select(`
@@ -576,7 +608,18 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
 
       if (profilesError) {
         console.error("Profiles error:", profilesError);
-        throw new Error(`Database error: ${profilesError.message}`);
+        throw new Error(
+          `Gagal mengambil data profil: ${profilesError.message}`,
+        );
+      }
+
+      if (!profiles || profiles.length === 0) {
+        toast({
+          title: "Informasi",
+          description: "Tidak ada data profil user ditemukan",
+          variant: "default",
+        });
+        return;
       }
 
       // Create a map of profiles for quick lookup
@@ -589,13 +632,22 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
           selectedMonth && selectedMonth !== "all"
             ? `bulan ${getMonthName(selectedMonth)} ${selectedYear}`
             : `tahun ${selectedYear}`;
+
         toast({
           title: "Informasi",
-          description: `Tidak ada data presensi untuk ${periodText}`,
+          description: `Tidak ada data presensi untuk ${periodText}. Silakan pilih periode lain atau pastikan data sudah tersedia.`,
           variant: "default",
         });
+
+        console.log(
+          `No attendance records found for period: ${startDate} to ${endDate}`,
+        );
         return;
       }
+
+      console.log(
+        `Found ${attendanceRecords.length} attendance records for the selected period`,
+      );
 
       // Create new workbook
       const workbook = XLSX.utils.book_new();
@@ -614,6 +666,13 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         "Laporan Kegiatan",
       ];
 
+      // Show progress
+      toast({
+        title: "Memproses Data",
+        description: `Sedang memproses ${attendanceRecords.length} record presensi...`,
+        variant: "default",
+      });
+
       // Group attendance records by user
       const recordsByUser = new Map();
 
@@ -624,7 +683,9 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         recordsByUser.get(record.user_id).push(record);
       });
 
-      console.log(`Creating sheets for ${recordsByUser.size} users`);
+      console.log(
+        `Creating sheets for ${recordsByUser.size} users with total ${attendanceRecords.length} records`,
+      );
 
       // Create a sheet for each user
       recordsByUser.forEach((userRecords, userId) => {
@@ -762,8 +823,8 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       URL.revokeObjectURL(url);
 
       toast({
-        title: "Berhasil",
-        description: `File Excel untuk ${periodText} dengan ${recordsByUser.size} sheet pengguna berhasil diunduh`,
+        title: "Download Berhasil",
+        description: `File Excel "${filenamePeriod}" berhasil diunduh dengan ${recordsByUser.size} sheet user dan ${attendanceRecords.length} total record`,
       });
     } catch (error: any) {
       console.error("Error downloading data:", error);
