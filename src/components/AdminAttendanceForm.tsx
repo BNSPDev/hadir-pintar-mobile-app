@@ -347,15 +347,15 @@ export function AdminAttendanceForm() {
 
   return (
     <div className="space-y-6">
-      {/* Form Input Presensi */}
+      {/* Form Input Presensi - Mobile Optimized */}
       <Card className="shadow-md border border-border bg-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-6 h-6 text-primary" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
             Input Presensi User
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 p-4 sm:p-6">
           {/* User Selection */}
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">
