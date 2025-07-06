@@ -937,298 +937,302 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50">
       <div className="absolute inset-4 sm:inset-8">
         <Card className="w-full h-full flex flex-col">
-        <CardHeader className="border-b p-4">
-          <div className="flex flex-col space-y-4">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-xl md:text-2xl font-bold">
-                Panel Admin
-              </CardTitle>
-              <Button variant="ghost" size="icon" onClick={onClose}>
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
+          <CardHeader className="border-b p-4">
+            <div className="flex flex-col space-y-4">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-xl md:text-2xl font-bold">
+                  Panel Admin
+                </CardTitle>
+                <Button variant="ghost" size="icon" onClick={onClose}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
 
-            {/* Mobile-first responsive layout */}
-            <div className="space-y-4">
-              {/* Period Selection Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-gray-700">
-                    Periode Rekap:
-                  </label>
-                  <Select
-                    value={selectedMonth}
-                    onValueChange={setSelectedMonth}
+              {/* Mobile-first responsive layout */}
+              <div className="space-y-4">
+                {/* Period Selection Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium text-gray-700">
+                      Periode Rekap:
+                    </label>
+                    <Select
+                      value={selectedMonth}
+                      onValueChange={setSelectedMonth}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Pilih Bulan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Satu Tahun Penuh</SelectItem>
+                        <SelectItem value="1">Januari</SelectItem>
+                        <SelectItem value="2">Februari</SelectItem>
+                        <SelectItem value="3">Maret</SelectItem>
+                        <SelectItem value="4">April</SelectItem>
+                        <SelectItem value="5">Mei</SelectItem>
+                        <SelectItem value="6">Juni</SelectItem>
+                        <SelectItem value="7">Juli</SelectItem>
+                        <SelectItem value="8">Agustus</SelectItem>
+                        <SelectItem value="9">September</SelectItem>
+                        <SelectItem value="10">Oktober</SelectItem>
+                        <SelectItem value="11">November</SelectItem>
+                        <SelectItem value="12">Desember</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium text-gray-700">
+                      Tahun:
+                    </label>
+                    <Select
+                      value={selectedYear}
+                      onValueChange={setSelectedYear}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Tahun" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 5 }, (_, i) => {
+                          const year = new Date().getFullYear() - i;
+                          return (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Action Buttons Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Download Button */}
+                  <Button
+                    onClick={downloadUserData}
+                    disabled={downloading || users.length === 0}
+                    size="lg"
+                    className="gap-2 bg-green-600 hover:bg-green-700 text-white font-bold shadow-md"
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Pilih Bulan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Satu Tahun Penuh</SelectItem>
-                      <SelectItem value="1">Januari</SelectItem>
-                      <SelectItem value="2">Februari</SelectItem>
-                      <SelectItem value="3">Maret</SelectItem>
-                      <SelectItem value="4">April</SelectItem>
-                      <SelectItem value="5">Mei</SelectItem>
-                      <SelectItem value="6">Juni</SelectItem>
-                      <SelectItem value="7">Juli</SelectItem>
-                      <SelectItem value="8">Agustus</SelectItem>
-                      <SelectItem value="9">September</SelectItem>
-                      <SelectItem value="10">Oktober</SelectItem>
-                      <SelectItem value="11">November</SelectItem>
-                      <SelectItem value="12">Desember</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-gray-700">
-                    Tahun:
-                  </label>
-                  <Select value={selectedYear} onValueChange={setSelectedYear}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Tahun" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 5 }, (_, i) => {
-                        const year = new Date().getFullYear() - i;
-                        return (
-                          <SelectItem key={year} value={year.toString()}>
-                            {year}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
+                    <Download className="h-5 w-5" />
+                    <span className="hidden sm:inline">
+                      {downloading
+                        ? "Mengunduh..."
+                        : `Excel ${selectedMonth && selectedMonth !== "all" ? getMonthName(selectedMonth) : "Tahunan"} ${selectedYear}`}
+                    </span>
+                    <span className="sm:hidden">
+                      {downloading ? "Mengunduh..." : "Unduh Excel"}
+                    </span>
+                  </Button>
+
+                  {/* Health Check Button */}
+                  <Button
+                    onClick={runHealthCheck}
+                    disabled={loading}
+                    size="lg"
+                    variant="outline"
+                    className={`gap-2 font-bold shadow-md border-2 ${
+                      healthStatus.overall
+                        ? "border-green-500 text-green-700 hover:bg-green-50"
+                        : "border-orange-500 text-orange-700 hover:bg-orange-50"
+                    }`}
+                  >
+                    {healthStatus.overall ? (
+                      <CheckCircle className="h-5 w-5" />
+                    ) : (
+                      <AlertTriangle className="h-5 w-5" />
+                    )}
+                    <span className="hidden sm:inline">
+                      {loading ? "Checking..." : "Health Check"}
+                    </span>
+                    <span className="sm:hidden">
+                      {loading ? "Check..." : "Status"}
+                    </span>
+                  </Button>
                 </div>
               </div>
-
-              {/* Action Buttons Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Download Button */}
-                <Button
-                  onClick={downloadUserData}
-                  disabled={downloading || users.length === 0}
-                  size="lg"
-                  className="gap-2 bg-green-600 hover:bg-green-700 text-white font-bold shadow-md"
-                >
-                  <Download className="h-5 w-5" />
-                  <span className="hidden sm:inline">
-                    {downloading
-                      ? "Mengunduh..."
-                      : `Excel ${selectedMonth && selectedMonth !== "all" ? getMonthName(selectedMonth) : "Tahunan"} ${selectedYear}`}
-                  </span>
-                  <span className="sm:hidden">
-                    {downloading ? "Mengunduh..." : "Unduh Excel"}
-                  </span>
-                </Button>
-
-                {/* Health Check Button */}
-                <Button
-                  onClick={runHealthCheck}
-                  disabled={loading}
-                  size="lg"
-                  variant="outline"
-                  className={`gap-2 font-bold shadow-md border-2 ${
-                    healthStatus.overall
-                      ? "border-green-500 text-green-700 hover:bg-green-50"
-                      : "border-orange-500 text-orange-700 hover:bg-orange-50"
-                  }`}
-                >
-                  {healthStatus.overall ? (
-                    <CheckCircle className="h-5 w-5" />
-                  ) : (
-                    <AlertTriangle className="h-5 w-5" />
-                  )}
-                  <span className="hidden sm:inline">
-                    {loading ? "Checking..." : "Health Check"}
-                  </span>
-                  <span className="sm:hidden">
-                    {loading ? "Check..." : "Status"}
-                  </span>
-                </Button>
-              </div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700">
-                Cari Pengguna:
-              </label>
-              <div className="relative">
-                <Input
-                  type="text"
-                  placeholder="Cari berdasarkan nama..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full"
-                />
-                <svg
-                  className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Cari Pengguna:
+                </label>
+                <div className="relative">
+                  <Input
+                    type="text"
+                    placeholder="Cari berdasarkan nama..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-full"
                   />
-                </svg>
+                  <svg
+                    className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
               </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0 flex-1 overflow-auto">
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <LoadingSpinner />
-            </div>
-          ) : filteredUsers.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="mx-auto h-12 w-12 text-gray-400">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0111.317-2.5M19 21v-1a6 6 0 00-4-5.659M16 7a4 4 0 11-8 0 4 4 0 018 0z"
-                  />
-                </svg>
+          </CardHeader>
+          <CardContent className="p-0 flex-1 overflow-auto">
+            {loading ? (
+              <div className="flex items-center justify-center h-64">
+                <LoadingSpinner />
               </div>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
-                Tidak ada data pengguna
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {searchTerm ? "Coba kata kunci lain" : "Data belum tersedia"}
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Nama
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Role
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredUsers.map((user) => (
-                    <tr key={user.id}>
-                      <td className="px-3 sm:px-6 py-4 text-sm font-medium text-gray-900">
-                        {user.isEditing ? (
-                          <Input
-                            value={user.tempData?.full_name || user.full_name}
-                            onChange={(e) =>
-                              handleInputChange(
-                                user.id,
-                                "full_name",
-                                e.target.value,
-                              )
-                            }
-                            className="w-full text-sm"
-                            placeholder="Nama lengkap"
-                          />
-                        ) : (
-                          <div className="truncate max-w-[150px] sm:max-w-none">
-                            {user.full_name}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">
-                        {user.isEditing ? (
-                          <Select
-                            value={user.tempData?.role || user.role}
-                            onValueChange={(value) =>
-                              handleInputChange(user.id, "role", value)
-                            }
-                          >
-                            <SelectTrigger className="w-full text-sm">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="user">User</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              user.role === "admin"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {user.role === "admin" ? "Admin" : "User"}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 sm:px-6 py-4 text-center text-sm font-medium">
-                        <div className="flex justify-center gap-2">
+            ) : filteredUsers.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="mx-auto h-12 w-12 text-gray-400">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0111.317-2.5M19 21v-1a6 6 0 00-4-5.659M16 7a4 4 0 11-8 0 4 4 0 018 0z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">
+                  Tidak ada data pengguna
+                </h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  {searchTerm ? "Coba kata kunci lain" : "Data belum tersedia"}
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th
+                        scope="col"
+                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Nama
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Role
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Aksi
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredUsers.map((user) => (
+                      <tr key={user.id}>
+                        <td className="px-3 sm:px-6 py-4 text-sm font-medium text-gray-900">
                           {user.isEditing ? (
-                            <>
-                              <Button
-                                variant="default"
-                                size="sm"
-                                className="gap-1 bg-green-600 hover:bg-green-700 text-white"
-                                onClick={() => saveUserData(user.id)}
-                                disabled={loading}
-                              >
-                                <Save className="h-4 w-4" />
-                                Simpan
-                              </Button>
+                            <Input
+                              value={user.tempData?.full_name || user.full_name}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  user.id,
+                                  "full_name",
+                                  e.target.value,
+                                )
+                              }
+                              className="w-full text-sm"
+                              placeholder="Nama lengkap"
+                            />
+                          ) : (
+                            <div className="truncate max-w-[150px] sm:max-w-none">
+                              {user.full_name}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">
+                          {user.isEditing ? (
+                            <Select
+                              value={user.tempData?.role || user.role}
+                              onValueChange={(value) =>
+                                handleInputChange(user.id, "role", value)
+                              }
+                            >
+                              <SelectTrigger className="w-full text-sm">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="user">User</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                user.role === "admin"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {user.role === "admin" ? "Admin" : "User"}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 text-center text-sm font-medium">
+                          <div className="flex justify-center gap-2">
+                            {user.isEditing ? (
+                              <>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="gap-1 bg-green-600 hover:bg-green-700 text-white"
+                                  onClick={() => saveUserData(user.id)}
+                                  disabled={loading}
+                                >
+                                  <Save className="h-4 w-4" />
+                                  Simpan
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1"
+                                  onClick={() => toggleEdit(user.id)}
+                                  disabled={loading}
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                  Batal
+                                </Button>
+                              </>
+                            ) : (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="gap-1"
+                                className="gap-2 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
                                 onClick={() => toggleEdit(user.id)}
-                                disabled={loading}
                               >
-                                <XCircle className="h-4 w-4" />
-                                Batal
+                                <Pencil className="h-4 w-4" />
+                                Edit
                               </Button>
-                            </>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="gap-2 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-                              onClick={() => toggleEdit(user.id)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                              Edit
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
