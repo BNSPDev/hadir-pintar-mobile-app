@@ -27,7 +27,7 @@ export async function validateAdminSystem(): Promise<ValidationResult> {
     }
 
     // Check required tables exist
-    const requiredTables = ["profiles", "attendance_records", "user_roles"];
+    const requiredTables = ["profiles", "attendance_records", "user_roles"] as const;
 
     for (const table of requiredTables) {
       try {

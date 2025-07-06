@@ -227,12 +227,15 @@ export function getStorageItemWithExpiry<T = any>(key: string): T | null {
       return null;
     }
 
-    if (item.expiry && item.expiry < Date.now()) {
+    // Type assertion after null check
+    const typedItem = item as { expiry?: number; value: T };
+
+    if (typedItem.expiry && typedItem.expiry < Date.now()) {
       removeStorageItem(key);
       return null;
     }
 
-    return item.value;
+    return typedItem.value;
   } catch (error) {
     console.warn(`Error getting item with expiry (key: ${key}):`, error);
     return null;

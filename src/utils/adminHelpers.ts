@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import { Building2, Home, Calendar, Heart } from "lucide-react";
 
 export interface User {
   id: string;
@@ -299,10 +300,10 @@ export function formatDateDisplay(date: Date): string {
  */
 export function getWorkTypeInfo(workType: string) {
   const workTypeOptions = [
-    { value: "WFO", label: "WFO", color: "bg-attendance-wfo" },
-    { value: "DL", label: "DL", color: "bg-attendance-dl" },
-    { value: "Cuti", label: "Cuti", color: "bg-attendance-cuti" },
-    { value: "Sakit", label: "Sakit", color: "bg-attendance-sakit" },
+    { value: "WFO", label: "WFO", color: "bg-attendance-wfo", icon: Building2 },
+    { value: "DL", label: "DL", color: "bg-attendance-dl", icon: Home },
+    { value: "Cuti", label: "Cuti", color: "bg-attendance-cuti", icon: Calendar },
+    { value: "Sakit", label: "Sakit", color: "bg-attendance-sakit", icon: Heart },
   ];
 
   return workTypeOptions.find((option) => option.value === workType);
