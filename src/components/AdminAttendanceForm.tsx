@@ -622,9 +622,9 @@ export function AdminAttendanceForm() {
                             </span>
                           </div>
                           {record.clock_out_time && (
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <CheckCircle className="w-3 h-3 text-blue-600" />
-                              <span className="font-medium">
+                            <div className="flex items-center gap-1 text-foreground">
+                              <CheckCircle className="w-3 h-3 text-green-600" />
+                              <span className="font-bold">
                                 {format(
                                   new Date(record.clock_out_time),
                                   "HH:mm",
