@@ -11,7 +11,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -24,26 +23,17 @@ import {
   Clock,
   CheckCircle,
 } from "lucide-react";
-
-interface User {
-  id: string;
-  user_id: string;
-  full_name: string;
-  position: string;
-  department: string;
-  employee_id: string;
-}
-
-interface AttendanceRecord {
-  id?: string;
-  user_id: string;
-  date: string;
-  clock_in_time: string | null;
-  clock_out_time: string | null;
-  work_type: string;
-  status: string;
-  daily_report: string | null;
-}
+import {
+  validateAdminAccess,
+  fetchNonAdminUsers,
+  fetchAttendanceByDate,
+  validateAttendanceForm,
+  saveAttendanceRecord,
+  formatDateDisplay,
+  getWorkTypeInfo,
+  type User,
+  type AttendanceRecord,
+} from "@/utils/adminHelpers";
 
 export function AdminAttendanceForm() {
   const { toast } = useToast();
@@ -80,32 +70,17 @@ export function AdminAttendanceForm() {
 
   useEffect(() => {
     const initializeData = async () => {
-      // First check if user has admin role
       try {
-        const { data: roleData, error: roleError } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
-          .single();
+        // Validate admin access using helper
+        const adminCheck = await validateAdminAccess();
 
-        console.log("Current user role:", roleData?.role);
-
-        if (roleError) {
-          console.error("Error checking user role:", roleError);
-          toast({
-            title: "Error",
-            description: "Tidak dapat memverifikasi role admin",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        if (roleData?.role !== "admin") {
+        if (!adminCheck.isValid) {
           toast({
             title: "Access Denied",
-            description: "Anda tidak memiliki akses admin",
+            description: adminCheck.error || "Anda tidak memiliki akses admin",
             variant: "destructive",
           });
+          setLoadingUsers(false);
           return;
         }
 
@@ -119,6 +94,7 @@ export function AdminAttendanceForm() {
           description: "Gagal menginisialisasi data admin",
           variant: "destructive",
         });
+        setLoadingUsers(false);
       }
     };
 
@@ -128,69 +104,35 @@ export function AdminAttendanceForm() {
   const fetchUsers = async () => {
     try {
       setLoadingUsers(true);
-      console.log("Fetching non-admin users...");
 
-      // First get all profiles
-      const { data: profilesData, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id, user_id, full_name, position, department, employee_id")
-        .order("full_name");
+      const result = await fetchNonAdminUsers();
 
-      if (profilesError) {
-        console.error("Supabase error fetching users:", profilesError);
-        throw new Error(`Database error: ${profilesError.message}`);
-      }
-
-      if (!profilesData || profilesData.length === 0) {
-        console.warn("No profiles found in database");
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
         setUsers([]);
         return;
       }
 
-      // Get admin user IDs to filter them out
-      const { data: adminRoles, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin");
+      setUsers(result.users);
 
-      if (rolesError) {
-        console.warn("Could not fetch admin roles:", rolesError);
-        // Show all users as fallback
-        setUsers(profilesData);
-        toast({
-          title: "Peringatan",
-          description:
-            "Tidak dapat memfilter admin users, menampilkan semua user",
-          variant: "default",
-        });
-        return;
-      }
-
-      // Filter out admin users
-      const adminUserIds = new Set(
-        adminRoles?.map((role) => role.user_id) || [],
-      );
-      const nonAdminUsers = profilesData.filter(
-        (user) => !adminUserIds.has(user.user_id),
-      );
-
-      console.log(
-        `Found ${nonAdminUsers.length} non-admin users out of ${profilesData.length} total users`,
-      );
-      setUsers(nonAdminUsers);
-
-      if (nonAdminUsers.length === 0) {
+      if (result.users.length === 0) {
         toast({
           title: "Informasi",
-          description: "Semua user terdaftar sebagai admin",
+          description: "Tidak ada user non-admin ditemukan",
           variant: "default",
         });
+      } else {
+        console.log(`Loaded ${result.users.length} non-admin users`);
       }
     } catch (error: any) {
       console.error("Error fetching users:", error);
       toast({
         title: "Error",
-        description: `Gagal memuat daftar user: ${error.message || "Unknown error"}`,
+        description: `Gagal memuat daftar user: ${error.message}`,
         variant: "destructive",
       });
       setUsers([]);
@@ -201,52 +143,27 @@ export function AdminAttendanceForm() {
 
   const fetchTodayAttendance = async () => {
     try {
-      console.log("Fetching today's attendance for date:", today);
+      const result = await fetchAttendanceByDate(today);
 
-      // Get attendance records with profiles using a join
-      const { data: attendanceData, error: attendanceError } = await supabase
-        .from("attendance_records")
-        .select(
-          `
-          *,
-          profiles:user_id (
-            user_id,
-            full_name,
-            position,
-            department,
-            employee_id
-          )
-        `,
-        )
-        .eq("date", today)
-        .order("created_at", { ascending: false });
-
-      if (attendanceError) {
-        console.error("Error fetching attendance records:", attendanceError);
+      if (result.error) {
         toast({
           title: "Error",
-          description: `Gagal memuat data presensi: ${attendanceError.message}`,
+          description: result.error,
           variant: "destructive",
         });
         setTodayAttendance([]);
         return;
       }
 
-      // Set attendance data (empty array if no data)
-      setTodayAttendance(attendanceData || []);
-
-      if (!attendanceData || attendanceData.length === 0) {
-        console.log("No attendance records found for today");
-      } else {
-        console.log(
-          `Found ${attendanceData.length} attendance records for today`,
-        );
-      }
+      setTodayAttendance(result.records);
+      console.log(
+        `Found ${result.records.length} attendance records for today`,
+      );
     } catch (error: any) {
       console.error("Error fetching today's attendance:", error);
       toast({
         title: "Error",
-        description: `Gagal memuat data presensi: ${error.message || "Unknown error"}`,
+        description: `Gagal memuat data presensi: ${error.message}`,
         variant: "destructive",
       });
       setTodayAttendance([]);
@@ -254,43 +171,18 @@ export function AdminAttendanceForm() {
   };
 
   const handleSubmit = async () => {
-    // Enhanced validation
-    if (
-      !selectedUser ||
-      selectedUser === "loading" ||
-      selectedUser === "no-users"
-    ) {
-      toast({
-        title: "Error",
-        description: "Harap pilih user terlebih dahulu",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Validate form using helper
+    const validation = validateAttendanceForm({
+      userId: selectedUser,
+      workType,
+      clockInTime,
+      clockOutTime,
+    });
 
-    if (!workType) {
+    if (!validation.isValid) {
       toast({
         title: "Error",
-        description: "Harap pilih tipe kerja",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!clockInTime) {
-      toast({
-        title: "Error",
-        description: "Jam masuk wajib diisi",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate clock out time is after clock in time
-    if (clockOutTime && clockOutTime <= clockInTime) {
-      toast({
-        title: "Error",
-        description: "Jam pulang harus setelah jam masuk",
+        description: validation.error!,
         variant: "destructive",
       });
       return;
@@ -298,56 +190,18 @@ export function AdminAttendanceForm() {
 
     setLoading(true);
     try {
-      // Check if attendance already exists
-      const { data: existingRecord, error: checkError } = await supabase
-        .from("attendance_records")
-        .select("*")
-        .eq("user_id", selectedUser)
-        .eq("date", today)
-        .maybeSingle();
-
-      if (checkError && checkError.code !== "PGRST116") {
-        console.error("Error checking existing record:", checkError);
-        throw new Error(`Gagal mengecek data presensi: ${checkError.message}`);
-      }
-
-      // Create ISO strings for time
-      const clockInISO = new Date(`${today}T${clockInTime}:00`).toISOString();
-      const clockOutISO = clockOutTime
-        ? new Date(`${today}T${clockOutTime}:00`).toISOString()
-        : null;
-
-      const attendanceData = {
-        user_id: selectedUser,
+      // Save attendance using helper
+      const result = await saveAttendanceRecord({
+        userId: selectedUser,
         date: today,
-        clock_in_time: clockInISO,
-        clock_out_time: clockOutISO,
-        work_type: workType,
-        status: clockOutISO ? "completed" : "active",
-        daily_report: dailyReport.trim() || null,
-      };
+        clockInTime,
+        clockOutTime,
+        workType,
+        dailyReport,
+      });
 
-      let operation: string;
-      let result;
-
-      if (existingRecord) {
-        // Update existing record
-        result = await supabase
-          .from("attendance_records")
-          .update(attendanceData)
-          .eq("id", existingRecord.id);
-        operation = "diperbarui";
-      } else {
-        // Create new record
-        result = await supabase
-          .from("attendance_records")
-          .insert(attendanceData);
-        operation = "disimpan";
-      }
-
-      if (result.error) {
-        console.error("Error saving attendance:", result.error);
-        throw new Error(`Gagal menyimpan presensi: ${result.error.message}`);
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
       const selectedUserName =
@@ -355,7 +209,7 @@ export function AdminAttendanceForm() {
 
       toast({
         title: "Berhasil",
-        description: `Presensi ${selectedUserName} telah ${operation}`,
+        description: `Presensi ${selectedUserName} telah ${result.isUpdate ? "diperbarui" : "disimpan"}`,
       });
 
       // Reset form
@@ -377,10 +231,6 @@ export function AdminAttendanceForm() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getWorkTypeInfo = (workType: string) => {
-    return workTypeOptions.find((option) => option.value === workType);
   };
 
   return (
