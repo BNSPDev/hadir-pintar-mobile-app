@@ -130,20 +130,10 @@ export async function fetchAttendanceByDate(date: string): Promise<{
   error?: string;
 }> {
   try {
+    // Get attendance records first
     const { data: attendanceData, error: attendanceError } = await supabase
       .from("attendance_records")
-      .select(
-        `
-        *,
-        profiles:user_id (
-          user_id,
-          full_name,
-          position,
-          department,
-          employee_id
-        )
-      `,
-      )
+      .select("*")
       .eq("date", date)
       .order("created_at", { ascending: false });
 
@@ -151,7 +141,43 @@ export async function fetchAttendanceByDate(date: string): Promise<{
       throw new Error(`Database error: ${attendanceError.message}`);
     }
 
-    return { records: (attendanceData || []) as AttendanceRecord[] };
+    if (!attendanceData || attendanceData.length === 0) {
+      return { records: [] };
+    }
+
+    // Get unique user IDs from attendance records
+    const userIds = [
+      ...new Set(attendanceData.map((record) => record.user_id)),
+    ];
+
+    // Get profiles for these users
+    const { data: profilesData, error: profilesError } = await supabase
+      .from("profiles")
+      .select("user_id, full_name, position, department, employee_id")
+      .in("user_id", userIds);
+
+    if (profilesError) {
+      console.warn("Could not fetch profiles:", profilesError);
+      // Return attendance data without profile info
+      return {
+        records: attendanceData.map((record) => ({
+          ...record,
+          profiles: null,
+        })),
+      };
+    }
+
+    // Combine attendance with profile data
+    const profilesMap = new Map(
+      profilesData?.map((profile) => [profile.user_id, profile]) || [],
+    );
+
+    const combinedRecords = attendanceData.map((record) => ({
+      ...record,
+      profiles: profilesMap.get(record.user_id) || null,
+    }));
+
+    return { records: combinedRecords as AttendanceRecord[] };
   } catch (error: any) {
     return {
       records: [],
