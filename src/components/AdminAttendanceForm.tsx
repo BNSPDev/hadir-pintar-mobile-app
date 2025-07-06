@@ -377,15 +377,17 @@ export function AdminAttendanceForm() {
                 ) : (
                   users.map((user) => (
                     <SelectItem key={user.user_id} value={user.user_id}>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="w-6 h-6">
+                      <div className="flex items-center gap-2 py-1">
+                        <Avatar className="w-6 h-6 flex-shrink-0">
                           <AvatarFallback className="text-xs">
                             {user.full_name.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <div className="font-medium">{user.full_name}</div>
-                          <div className="text-xs text-muted-foreground">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium truncate">
+                            {user.full_name}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">
                             {user.position} - {user.department}
                           </div>
                         </div>
