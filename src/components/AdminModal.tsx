@@ -1087,7 +1087,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                 <LoadingSpinner />
               </div>
             ) : filteredUsers.length === 0 ? (
-              <div className="text-center py-12">
+              <div className="text-center py-12 px-4">
                 <div className="mx-auto h-12 w-12 text-gray-400">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
