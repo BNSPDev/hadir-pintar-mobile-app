@@ -937,8 +937,8 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50">
       <div className="absolute inset-4 sm:inset-8">
         <Card className="w-full h-full flex flex-col">
-          <CardHeader className="border-b p-4">
-            <div className="flex flex-col space-y-4">
+          <CardHeader className="border-b p-3 sm:p-4 flex-shrink-0">
+            <div className="flex flex-col space-y-3 sm:space-y-4">
               <div className="flex justify-between items-center">
                 <CardTitle className="text-xl md:text-2xl font-bold">
                   Panel Admin
@@ -1081,7 +1081,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-0 flex-1 overflow-auto">
+          <CardContent className="p-0 flex-1 overflow-y-auto min-h-0">
             {loading ? (
               <div className="flex items-center justify-center h-64">
                 <LoadingSpinner />
