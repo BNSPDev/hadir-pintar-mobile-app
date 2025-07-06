@@ -422,8 +422,8 @@ export function AdminAttendanceForm() {
             </Select>
           </div>
 
-          {/* Time Inputs */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Time Inputs - Mobile Optimized */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">
                 Jam Masuk *
@@ -432,7 +432,7 @@ export function AdminAttendanceForm() {
                 type="time"
                 value={clockInTime}
                 onChange={(e) => setClockInTime(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
+                className="w-full px-3 py-3 sm:py-2 border border-border rounded-md bg-background text-foreground text-base sm:text-sm"
               />
             </div>
             <div>
@@ -443,7 +443,7 @@ export function AdminAttendanceForm() {
                 type="time"
                 value={clockOutTime}
                 onChange={(e) => setClockOutTime(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground"
+                className="w-full px-3 py-3 sm:py-2 border border-border rounded-md bg-background text-foreground text-base sm:text-sm"
               />
             </div>
           </div>
