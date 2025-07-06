@@ -73,8 +73,6 @@ interface UserData {
     full_name: string;
     position: string;
     department: string;
-    employee_id: string;
-    role: string;
   };
 }
 
@@ -104,13 +102,6 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
     "Umum",
   ] as const;
 
-  // Available roles
-  const roles = ["admin", "user"] as const;
-
-  // Type guard for role
-  const isRole = (role: string): role is "admin" | "user" => {
-    return role === "admin" || role === "user";
-  };
 
   // Type guard for department
   const isDepartment = (dept: string): dept is (typeof departments)[number] => {
@@ -159,7 +150,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
               (r) => r.user_id === profile.user_id,
             );
             const roleValue = userRole?.role || "user";
-            const role = isRole(roleValue) ? roleValue : "user";
+            const role = roleValue === "admin" ? "admin" : "user";
 
             // Get attendance count
             const { count, error: countError } = await supabase
@@ -270,8 +261,6 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                   full_name: user.full_name,
                   position: user.position,
                   department: user.department,
-                  employee_id: user.employee_id,
-                  role: user.role,
                 }
               : undefined,
           };
@@ -314,22 +303,11 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
           full_name: user.tempData.full_name,
           position: user.tempData.position,
           department: user.tempData.department,
-          employee_id: user.tempData.employee_id,
           updated_at: new Date().toISOString(),
         })
         .eq("user_id", user.user_id);
 
       if (profileError) throw profileError;
-
-      // Update role in user_roles table
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .upsert(
-          { user_id: user.user_id, role: user.tempData.role },
-          { onConflict: "user_id" },
-        );
-
-      if (roleError) throw roleError;
 
       // Update local state
       setUsers(
@@ -1125,7 +1103,13 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                         scope="col"
                         className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                       >
-                        Role
+                        Jabatan
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Unit Kerja
                       </th>
                       <th
                         scope="col"
@@ -1160,30 +1144,47 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                         </td>
                         <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">
                           {user.isEditing ? (
+                            <Input
+                              value={user.tempData?.position || user.position}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  user.id,
+                                  "position",
+                                  e.target.value,
+                                )
+                              }
+                              className="w-full text-sm"
+                              placeholder="Jabatan"
+                            />
+                          ) : (
+                            <div className="truncate max-w-[120px] sm:max-w-none">
+                              {user.position}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">
+                          {user.isEditing ? (
                             <Select
-                              value={user.tempData?.role || user.role}
+                              value={user.tempData?.department || user.department}
                               onValueChange={(value) =>
-                                handleInputChange(user.id, "role", value)
+                                handleInputChange(user.id, "department", value)
                               }
                             >
                               <SelectTrigger className="w-full text-sm">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="user">User</SelectItem>
-                                <SelectItem value="admin">Admin</SelectItem>
+                                {departments.map((dept) => (
+                                  <SelectItem key={dept} value={dept}>
+                                    {dept}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           ) : (
-                            <span
-                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                user.role === "admin"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-gray-100 text-gray-800"
-                              }`}
-                            >
-                              {user.role === "admin" ? "Admin" : "User"}
-                            </span>
+                            <div className="truncate max-w-[120px] sm:max-w-none">
+                              {user.department}
+                            </div>
                           )}
                         </td>
                         <td className="px-3 sm:px-6 py-4 text-center text-sm font-medium">
