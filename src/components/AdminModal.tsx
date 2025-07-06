@@ -156,7 +156,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
         typedProfiles.map(async (profile) => {
           try {
             const userRole = typedUserRoles.find(
-              (r) => r.user_id === profile.id,
+              (r) => r.user_id === profile.user_id,
             );
             const roleValue = userRole?.role || "user";
             const role = isRole(roleValue) ? roleValue : "user";
