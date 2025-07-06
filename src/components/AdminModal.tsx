@@ -457,7 +457,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       Object.entries(attendanceByUser).forEach(([userId, records]) => {
         if (!records || records.length === 0) return;
 
-        const user = records[0]?.profiles;
+        const user = profilesMap.get(userId);
         if (!user) return;
 
         const userName = user.full_name || `User_${userId}`;
