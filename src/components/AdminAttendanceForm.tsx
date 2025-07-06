@@ -137,16 +137,14 @@ export function AdminAttendanceForm() {
         .order("full_name");
 
       if (profilesError) {
-        console.error("Supabase error fetching users:", {
-          message: profilesError.message,
-          code: profilesError.code,
-          details: profilesError.details,
-          hint: profilesError.hint,
-          full: profilesError,
-        });
-        throw new Error(
-          `Database error: ${profilesError.message || JSON.stringify(profilesError)}`,
-        );
+        console.error("Supabase error fetching users:", profilesError);
+        throw new Error(`Database error: ${profilesError.message}`);
+      }
+
+      if (!profilesData || profilesData.length === 0) {
+        console.warn("No profiles found in database");
+        setUsers([]);
+        return;
       }
 
       // Get admin user IDs to filter them out
@@ -156,12 +154,15 @@ export function AdminAttendanceForm() {
         .eq("role", "admin");
 
       if (rolesError) {
-        console.warn(
-          "Warning: Could not fetch admin roles, showing all users:",
-          rolesError,
-        );
-        // If we can't get admin roles, show all users as fallback
-        setUsers(profilesData || []);
+        console.warn("Could not fetch admin roles:", rolesError);
+        // Show all users as fallback
+        setUsers(profilesData);
+        toast({
+          title: "Peringatan",
+          description:
+            "Tidak dapat memfilter admin users, menampilkan semua user",
+          variant: "default",
+        });
         return;
       }
 
@@ -169,16 +170,22 @@ export function AdminAttendanceForm() {
       const adminUserIds = new Set(
         adminRoles?.map((role) => role.user_id) || [],
       );
-      const nonAdminUsers = (profilesData || []).filter(
+      const nonAdminUsers = profilesData.filter(
         (user) => !adminUserIds.has(user.user_id),
       );
 
       console.log(
-        "Non-admin users fetched successfully:",
-        nonAdminUsers.length,
+        `Found ${nonAdminUsers.length} non-admin users out of ${profilesData.length} total users`,
       );
-      console.log("Filtered out admin users:", adminUserIds.size);
       setUsers(nonAdminUsers);
+
+      if (nonAdminUsers.length === 0) {
+        toast({
+          title: "Informasi",
+          description: "Semua user terdaftar sebagai admin",
+          variant: "default",
+        });
+      }
     } catch (error: any) {
       console.error("Error fetching users:", error);
       toast({
@@ -186,6 +193,7 @@ export function AdminAttendanceForm() {
         description: `Gagal memuat daftar user: ${error.message || "Unknown error"}`,
         variant: "destructive",
       });
+      setUsers([]);
     } finally {
       setLoadingUsers(false);
     }
@@ -193,80 +201,77 @@ export function AdminAttendanceForm() {
 
   const fetchTodayAttendance = async () => {
     try {
-      console.log("Fetching today's attendance as admin for date:", today);
+      console.log("Fetching today's attendance for date:", today);
 
-      // First get attendance records
+      // Get attendance records with profiles using a join
       const { data: attendanceData, error: attendanceError } = await supabase
         .from("attendance_records")
-        .select("*")
+        .select(
+          `
+          *,
+          profiles:user_id (
+            user_id,
+            full_name,
+            position,
+            department,
+            employee_id
+          )
+        `,
+        )
         .eq("date", today)
         .order("created_at", { ascending: false });
 
       if (attendanceError) {
-        console.error("Supabase error fetching attendance records:", {
-          message: attendanceError.message,
-          code: attendanceError.code,
-          details: attendanceError.details,
-          hint: attendanceError.hint,
-          full: attendanceError,
-        });
+        console.error("Error fetching attendance records:", attendanceError);
         toast({
           title: "Error",
-          description: `Gagal memuat data presensi: ${attendanceError.message || JSON.stringify(attendanceError)}`,
+          description: `Gagal memuat data presensi: ${attendanceError.message}`,
           variant: "destructive",
         });
-        return;
-      }
-
-      // If no attendance records, set empty array
-      if (!attendanceData || attendanceData.length === 0) {
         setTodayAttendance([]);
         return;
       }
 
-      // Get all user profiles for the users in attendance records
-      const userIds = attendanceData.map((record) => record.user_id);
-      const { data: profilesData, error: profilesError } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, position, department")
-        .in("user_id", userIds);
+      // Set attendance data (empty array if no data)
+      setTodayAttendance(attendanceData || []);
 
-      if (profilesError) {
-        console.error("Error fetching profiles:", profilesError.message);
-        // Still show attendance data even if profiles fail
-        setTodayAttendance(attendanceData);
-        return;
+      if (!attendanceData || attendanceData.length === 0) {
+        console.log("No attendance records found for today");
+      } else {
+        console.log(
+          `Found ${attendanceData.length} attendance records for today`,
+        );
       }
-
-      // Combine attendance data with profile data
-      const combinedData = attendanceData.map((record) => ({
-        ...record,
-        profiles:
-          profilesData?.find((profile) => profile.user_id === record.user_id) ||
-          null,
-      }));
-
-      setTodayAttendance(combinedData);
     } catch (error: any) {
-      console.error("Error fetching today's attendance:", error.message);
+      console.error("Error fetching today's attendance:", error);
       toast({
         title: "Error",
         description: `Gagal memuat data presensi: ${error.message || "Unknown error"}`,
         variant: "destructive",
       });
+      setTodayAttendance([]);
     }
   };
 
   const handleSubmit = async () => {
+    // Enhanced validation
     if (
       !selectedUser ||
-      !workType ||
       selectedUser === "loading" ||
       selectedUser === "no-users"
     ) {
       toast({
         title: "Error",
-        description: "Harap pilih user dan tipe kerja",
+        description: "Harap pilih user terlebih dahulu",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!workType) {
+      toast({
+        title: "Error",
+        description: "Harap pilih tipe kerja",
         variant: "destructive",
       });
       return;
@@ -276,6 +281,16 @@ export function AdminAttendanceForm() {
       toast({
         title: "Error",
         description: "Jam masuk wajib diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate clock out time is after clock in time
+    if (clockOutTime && clockOutTime <= clockInTime) {
+      toast({
+        title: "Error",
+        description: "Jam pulang harus setelah jam masuk",
         variant: "destructive",
       });
       return;
@@ -291,8 +306,12 @@ export function AdminAttendanceForm() {
         .eq("date", today)
         .maybeSingle();
 
-      if (checkError && checkError.code !== "PGRST116") throw checkError;
+      if (checkError && checkError.code !== "PGRST116") {
+        console.error("Error checking existing record:", checkError);
+        throw new Error(`Gagal mengecek data presensi: ${checkError.message}`);
+      }
 
+      // Create ISO strings for time
       const clockInISO = new Date(`${today}T${clockInTime}:00`).toISOString();
       const clockOutISO = clockOutTime
         ? new Date(`${today}T${clockOutTime}:00`).toISOString()
@@ -305,24 +324,30 @@ export function AdminAttendanceForm() {
         clock_out_time: clockOutISO,
         work_type: workType,
         status: clockOutISO ? "completed" : "active",
-        daily_report: dailyReport || null,
+        daily_report: dailyReport.trim() || null,
       };
+
+      let operation: string;
+      let result;
 
       if (existingRecord) {
         // Update existing record
-        const { error } = await supabase
+        result = await supabase
           .from("attendance_records")
           .update(attendanceData)
           .eq("id", existingRecord.id);
-
-        if (error) throw error;
+        operation = "diperbarui";
       } else {
         // Create new record
-        const { error } = await supabase
+        result = await supabase
           .from("attendance_records")
           .insert(attendanceData);
+        operation = "disimpan";
+      }
 
-        if (error) throw error;
+      if (result.error) {
+        console.error("Error saving attendance:", result.error);
+        throw new Error(`Gagal menyimpan presensi: ${result.error.message}`);
       }
 
       const selectedUserName =
@@ -330,7 +355,7 @@ export function AdminAttendanceForm() {
 
       toast({
         title: "Berhasil",
-        description: `Presensi ${selectedUserName} telah ${existingRecord ? "diperbarui" : "disimpan"}`,
+        description: `Presensi ${selectedUserName} telah ${operation}`,
       });
 
       // Reset form
@@ -341,12 +366,12 @@ export function AdminAttendanceForm() {
       setDailyReport("");
 
       // Refresh today's attendance
-      fetchTodayAttendance();
+      await fetchTodayAttendance();
     } catch (error: any) {
       console.error("Error saving attendance:", error);
       toast({
         title: "Error",
-        description: "Gagal menyimpan presensi",
+        description: error.message || "Gagal menyimpan presensi",
         variant: "destructive",
       });
     } finally {
@@ -483,19 +508,46 @@ export function AdminAttendanceForm() {
       {/* Today's Attendance Summary */}
       <Card className="shadow-md border border-border bg-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-primary" />
-            Presensi Hari Ini (
-            {format(new Date(), "EEEE, dd MMMM yyyy", { locale: id })})
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-6 h-6 text-primary" />
+              Presensi Hari Ini
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchTodayAttendance}
+              disabled={loading}
+              className="h-8"
+            >
+              Refresh
+            </Button>
           </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            {format(new Date(), "EEEE, dd MMMM yyyy", { locale: id })}
+          </p>
         </CardHeader>
         <CardContent>
-          {todayAttendance.length === 0 ? (
+          {loadingUsers ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground mt-2">
+                Memuat data presensi...
+              </p>
+            </div>
+          ) : todayAttendance.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              <p>Belum ada data presensi hari ini</p>
+              <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p className="font-medium">Belum ada data presensi hari ini</p>
+              <p className="text-sm">
+                Data akan muncul setelah mengisi presensi user
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
+              <div className="text-sm text-muted-foreground mb-3">
+                Total: {todayAttendance.length} presensi tercatat
+              </div>
               {todayAttendance.map((record: any) => {
                 const workTypeInfo = getWorkTypeInfo(record.work_type);
                 const Icon = workTypeInfo?.icon || Clock;
@@ -503,11 +555,11 @@ export function AdminAttendanceForm() {
                 return (
                   <div
                     key={record.id}
-                    className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border/50"
+                    className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border/50 hover:bg-muted/70 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <Avatar className="w-10 h-10">
-                        <AvatarFallback>
+                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
                           {record.profiles?.full_name?.charAt(0) || "U"}
                         </AvatarFallback>
                       </Avatar>
@@ -516,30 +568,39 @@ export function AdminAttendanceForm() {
                           {record.profiles?.full_name || "Unknown User"}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {record.profiles?.position} -{" "}
-                          {record.profiles?.department}
+                          {record.profiles?.position || "N/A"} -{" "}
+                          {record.profiles?.department || "N/A"}
                         </p>
+                        {record.profiles?.employee_id && (
+                          <p className="text-xs text-muted-foreground">
+                            NIP: {record.profiles.employee_id}
+                          </p>
+                        )}
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
                       <Badge
-                        className={`${workTypeInfo?.color || "bg-gray-500"} text-white`}
+                        className={`${workTypeInfo?.color || "bg-gray-500"} text-white shadow-sm`}
                       >
                         <Icon className="w-3 h-3 mr-1" />
                         {record.work_type}
                       </Badge>
                       <div className="text-right text-sm">
                         <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {record.clock_in_time
-                            ? format(new Date(record.clock_in_time), "HH:mm")
-                            : "-"}
+                          <Clock className="w-3 h-3 text-green-600" />
+                          <span className="font-medium">
+                            {record.clock_in_time
+                              ? format(new Date(record.clock_in_time), "HH:mm")
+                              : "-"}
+                          </span>
                         </div>
                         {record.clock_out_time && (
                           <div className="flex items-center gap-1 text-muted-foreground">
-                            <CheckCircle className="w-3 h-3" />
-                            {format(new Date(record.clock_out_time), "HH:mm")}
+                            <CheckCircle className="w-3 h-3 text-blue-600" />
+                            <span className="font-medium">
+                              {format(new Date(record.clock_out_time), "HH:mm")}
+                            </span>
                           </div>
                         )}
                       </div>
