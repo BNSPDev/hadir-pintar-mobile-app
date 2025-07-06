@@ -1083,7 +1083,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
           </CardHeader>
           <CardContent className="p-0 flex-1 overflow-y-auto min-h-0">
             {loading ? (
-              <div className="flex items-center justify-center h-64">
+              <div className="flex items-center justify-center h-64 px-4">
                 <LoadingSpinner />
               </div>
             ) : filteredUsers.length === 0 ? (
