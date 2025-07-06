@@ -1164,23 +1164,18 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                         </td>
                         <td className="px-3 sm:px-6 py-4 text-sm text-gray-500">
                           {user.isEditing ? (
-                            <Select
+                            <Input
                               value={user.tempData?.department || user.department}
-                              onValueChange={(value) =>
-                                handleInputChange(user.id, "department", value)
+                              onChange={(e) =>
+                                handleInputChange(
+                                  user.id,
+                                  "department",
+                                  e.target.value,
+                                )
                               }
-                            >
-                              <SelectTrigger className="w-full text-sm">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {departments.map((dept) => (
-                                  <SelectItem key={dept} value={dept}>
-                                    {dept}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              className="w-full text-sm"
+                              placeholder="Unit Kerja"
+                            />
                           ) : (
                             <div className="truncate max-w-[120px] sm:max-w-none">
                               {user.department}

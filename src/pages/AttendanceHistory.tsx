@@ -205,7 +205,6 @@ export default function AttendanceHistory() {
                             </div>
                             <div className="text-sm text-muted-foreground">
                               <p>{userProfile.position} • {userProfile.department}</p>
-                              <p>NIP: {userProfile.employee_id}</p>
                             </div>
                           </div>
                           <ChevronRight className="w-5 h-5 text-muted-foreground" />
