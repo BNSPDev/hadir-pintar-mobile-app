@@ -1111,7 +1111,7 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto p-3 sm:p-4">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
