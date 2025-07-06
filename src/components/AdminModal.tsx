@@ -155,10 +155,11 @@ export function AdminModal({ isOpen, onClose }: AdminModalProps) {
       const usersWithData = await Promise.all(
         typedProfiles.map(async (profile) => {
           try {
-            const userRole = userRoles?.find((r) => r.user_id === profile.id);
-            const role = isRole(userRole?.role || "user")
-              ? userRole.role
-              : "user";
+            const userRole = typedUserRoles.find(
+              (r) => r.user_id === profile.id,
+            );
+            const roleValue = userRole?.role || "user";
+            const role = isRole(roleValue) ? roleValue : "user";
 
             // Get attendance count
             const { count, error: countError } = await supabase
