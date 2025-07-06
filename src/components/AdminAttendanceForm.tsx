@@ -569,54 +569,62 @@ export function AdminAttendanceForm() {
                 return (
                   <div
                     key={record.id}
-                    className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border/50 hover:bg-muted/70 transition-colors"
+                    className="p-3 sm:p-4 bg-muted/50 rounded-xl border border-border/50 hover:bg-muted/70 transition-colors"
                   >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                          {record.profiles?.full_name?.charAt(0) || "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {record.profiles?.full_name || "Unknown User"}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {record.profiles?.position || "N/A"} -{" "}
-                          {record.profiles?.department || "N/A"}
-                        </p>
-                        {record.profiles?.employee_id && (
-                          <p className="text-xs text-muted-foreground">
-                            NIP: {record.profiles.employee_id}
+                    {/* Mobile-first responsive layout */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      {/* User Info Section */}
+                      <div className="flex items-center gap-3 flex-1">
+                        <Avatar className="w-10 h-10 flex-shrink-0">
+                          <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                            {record.profiles?.full_name?.charAt(0) || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-foreground truncate">
+                            {record.profiles?.full_name || "Unknown User"}
                           </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <Badge
-                        className={`${workTypeInfo?.color || "bg-gray-500"} text-white shadow-sm`}
-                      >
-                        <Icon className="w-3 h-3 mr-1" />
-                        {record.work_type}
-                      </Badge>
-                      <div className="text-right text-sm">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-green-600" />
-                          <span className="font-medium">
-                            {record.clock_in_time
-                              ? format(new Date(record.clock_in_time), "HH:mm")
-                              : "-"}
-                          </span>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {record.profiles?.position || "N/A"} -{" "}
+                            {record.profiles?.department || "N/A"}
+                          </p>
                         </div>
-                        {record.clock_out_time && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <CheckCircle className="w-3 h-3 text-blue-600" />
+                      </div>
+
+                      {/* Badge and Time Section */}
+                      <div className="flex items-center justify-between sm:justify-end gap-3">
+                        <Badge
+                          className={`${workTypeInfo?.color || "bg-gray-500"} text-white shadow-sm flex-shrink-0`}
+                        >
+                          <Icon className="w-3 h-3 mr-1" />
+                          {record.work_type}
+                        </Badge>
+
+                        {/* Time Display - Responsive */}
+                        <div className="flex gap-2 text-sm">
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-green-600" />
                             <span className="font-medium">
-                              {format(new Date(record.clock_out_time), "HH:mm")}
+                              {record.clock_in_time
+                                ? format(
+                                    new Date(record.clock_in_time),
+                                    "HH:mm",
+                                  )
+                                : "-"}
                             </span>
                           </div>
-                        )}
+                          {record.clock_out_time && (
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <CheckCircle className="w-3 h-3 text-blue-600" />
+                              <span className="font-medium">
+                                {format(
+                                  new Date(record.clock_out_time),
+                                  "HH:mm",
+                                )}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
